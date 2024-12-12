@@ -19,3 +19,12 @@ discord_automatic_subtitles/
 ├── package.json           # プロジェクトの設定ファイル
 ├── package-lock.json      # npmの依存関係のロックファイル
 └── README.md              # プロジェクトの説明
+
+# 起動方法
+$ npx electron ./
+
+## Windowsで実行時に文字化けが気になる場合
+$ chcp 65001
+
+# ビルド方法
+$ electron-packager ./ slideshow --platform=win32 --arch=x64 --electron-version=5.0.7 --overwrite

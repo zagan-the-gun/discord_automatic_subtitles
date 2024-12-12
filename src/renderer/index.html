@@ -2,9 +2,9 @@
 <html>
 <head>
     <meta charset="utf-8" />
-    <title>OBS WebSocket接続</title>
+    <title>無許可で自動字幕くん</title>
     <script src="https://cdn.jsdelivr.net/npm/obs-websocket-js"></script>
-    <!-- <script src="index.js" defer></script> -->
+    <!-- <script src="renderer.js" defer></script> -->
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -35,11 +35,13 @@
             font-weight: bold;
         }
     </style>
+    <script src="renderer.js" defer></script>
 </head>
 <body>
-    <h1>OBS WebSocket接続</h1>
+    <h1>無許可で自動字幕くん</h1>
+    <h3>Discordで特定のユーザのボイチャに自動で字幕を付けて、OBSのテキストボックスにWebsocket経由で送信するアプリ</h3>
     <label for="ipAddress">IPアドレス:</label>
-    <input type="text" id="ipAddress" value="127.0.0.1" /><br />
+    <input type="text" id="ipAddress" value="192.168.1.12" /><br />
 
     <label for="port">ポート:</label>
     <input type="number" id="port" value="4455" /><br />
@@ -53,10 +55,12 @@
     <label for="sourceName">テキストソース名:</label>
     <input type="text" id="sourceName" value="ksk_subtitles" placeholder="テキストソース名を入力" /><br />
 
-    <label for="newText">新しいテキスト:</label>
+    <label for="newText">OBS送信テキスト:</label>
     <input type="text" id="newText" placeholder="新しいテキストを入力" /><br />
     <button id="updateTextButton">テキストを更新</button>
 
-    <script src="renderer.js" defer></script>
+    <button id="start-bot-button">ボットを起動</button>
+
+    <!-- <script src="renderer.js" defer></script> -->
 </body>
 </html>

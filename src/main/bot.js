@@ -43,9 +43,11 @@ const { OpusEncoder } = opus; // 必要なエクスポートを取得
 import https from 'https'; // requireをimportに変更
 import { Client, IntentsBitField } from 'discord.js'; // requireをimportに変更
 import { joinVoiceChannel, EndBehaviorType } from '@discordjs/voice'; // requireをimportに変更
-import vosk from 'vosk'; // requireをimportに変更
+// import vosk from 'vosk'; // requireをimportに変更
 import witClient from 'node-witai-speech'; // requireをimportに変更
+// const witClientInstance = new witClient.Wit({ accessToken: WITAI_TOK });
 import gspeech from '@google-cloud/speech'; // requireをimportに変更
+// import { ipcMain } from 'electron';
 
 //////////////////////////////////////////
 ///////////////// VARIA //////////////////
@@ -112,7 +114,7 @@ function loadConfig() {
         throw 'missing gspeech_key.json'
     
 }
-loadConfig()
+loadConfig() //削除?
 
 function listWitAIApps(cb) {
     const options = {
@@ -193,7 +195,7 @@ const discordClient = new Client({intents: myIntents})
 if (process.env.DEBUG)
     discordClient.on('debug', console.debug);
 discordClient.on('ready', () => {
-    console.log(`Logged in as ${discordClient.user.tag}!`)
+    console.log(`Discord client on ${discordClient.user.tag}!`)
 })
 discordClient.login(DISCORD_TOK)
 
@@ -212,8 +214,9 @@ discordClient.on('messageCreate', async (msg) => {
     try {
         if (!('guild' in msg) || !msg.guild) return; // prevent private messages to bot
         const mapKey = msg.guild.id;
-        if (msg.content.trim().toLowerCase() == _CMD_JOIN) {
-            if (!msg.member.voice.channel.id) {
+        if (msg.content.trim().toLowerCase() === _CMD_JOIN) {
+          console.log(`*joinが呼び出されました: ${!msg.member.voice.channel.id}`);
+          if (!msg.member.voice.channel.id) {
                 msg.reply('Error: please join a voice channel first.')
             } else {
                 if (!guildMap.has(mapKey))
@@ -285,58 +288,65 @@ function getHelpString() {
 }
 
 async function connect(msg, mapKey) {
-    try {
-        let voice_Channel = await discordClient.channels.fetch(msg.member.voice.channel.id);
-        if (!voice_Channel) return msg.reply("Error: The voice channel does not exist!");
-        let text_Channel = await discordClient.channels.fetch(msg.channel.id);
-        if (!text_Channel) return msg.reply("Error: The text channel does not exist!");
-        const voice_Connection = joinVoiceChannel({
-          channelId: voice_Channel.id,
-          guildId: voice_Channel.guild.id,
-          adapterCreator: voice_Channel.guild.voiceAdapterCreator,
-          selfDeaf: false,
-				  selfMute: true,
-        });
-        // voice_Connection.play(new Silence(), { type: 'opus' });
-        guildMap.set(mapKey, {
-            'text_Channel': text_Channel,
-            'voice_Channel': voice_Channel,
-            'voice_Connection': voice_Connection,
-            'selected_lang': 'en',
-            'debug': false,
-        });
-        console.log(`speak_implの実行`);
-        speak_impl(voice_Connection, mapKey)
-        console.log(`speak_implの実行完了`);
-        voice_Connection.on('disconnect', async(e) => {
-            if (e) console.log(e);
-            guildMap.delete(mapKey);
-        })
-        msg.reply('connected!')
-    } catch (e) {
-        console.log('connect: ' + e)
-        msg.reply('Error: unable to join your voice channel.');
-        throw e;
-    }
+  try {
+      let voice_Channel = await discordClient.channels.fetch(msg.member.voice.channel.id);
+      if (!voice_Channel) return msg.reply("Error: The voice channel does not exist!");
+      let text_Channel = await discordClient.channels.fetch(msg.channel.id);
+      if (!text_Channel) return msg.reply("Error: The text channel does not exist!");
+      const voice_Connection = joinVoiceChannel({
+        channelId: voice_Channel.id,
+        guildId: voice_Channel.guild.id,
+        adapterCreator: voice_Channel.guild.voiceAdapterCreator,
+        selfDeaf: false,
+        selfMute: true,
+      });
+      // voice_Connection.play(new Silence(), { type: 'opus' });
+      guildMap.set(mapKey, {
+          'text_Channel': text_Channel,
+          'voice_Channel': voice_Channel,
+          'voice_Connection': voice_Connection,
+          'selected_lang': 'en',
+          'debug': false,
+      });
+      console.log(`speak_implの実行`);
+      speak_impl(voice_Connection, mapKey)
+      console.log(`speak_implの実行完了`);
+      voice_Connection.on('disconnect', async(e) => {
+          if (e) console.log(e);
+          guildMap.delete(mapKey);
+      })
+      msg.reply('connected!')
+  } catch (e) {
+      console.log('connect: ' + e)
+      msg.reply('Error: unable to join your voice channel.');
+      throw e;
+  }
 }
 
 let recs = {}
-if (SPEECH_METHOD === 'vosk') {
-  vosk.setLogLevel(-1);
-  // MODELS: https://alphacephei.com/vosk/models
-  recs = {
-    'en': new vosk.Recognizer({model: new vosk.Model('vosk_models/en'), sampleRate: 48000}),
-    // 'fr': new vosk.Recognizer({model: new vosk.Model('vosk_models/fr'), sampleRate: 48000}),
-    // 'es': new vosk.Recognizer({model: new vosk.Model('vosk_models/es'), sampleRate: 48000}),
-  }
-  // download new models if you need
-  // dev reference: https://github.com/alphacep/vosk-api/blob/master/nodejs/index.js
-}
+// if (SPEECH_METHOD === 'vosk') {
+//   vosk.setLogLevel(-1);
+//   // MODELS: https://alphacephei.com/vosk/models
+//   recs = {
+//     'en': new vosk.Recognizer({model: new vosk.Model('vosk_models/en'), sampleRate: 48000}),
+//     // 'fr': new vosk.Recognizer({model: new vosk.Model('vosk_models/fr'), sampleRate: 48000}),
+//     // 'es': new vosk.Recognizer({model: new vosk.Model('vosk_models/es'), sampleRate: 48000}),
+//   }
+//   // download new models if you need
+//   // dev reference: https://github.com/alphacep/vosk-api/blob/master/nodejs/index.js
+// }
 
 function speak_impl(voice_Connection, mapKey) {
   console.log('speak_implが呼び出されました');
   const receiver = voice_Connection.receiver;
   receiver.speaking.on('start', async (userId) => {
+    // zagan
+    // if (userId !== '487629687078780959') {
+    // ksk
+    if (userId !== '266090864550346752') {
+      console.log(`userId ${userId} 意外は処理対象外です。`)
+      return;
+    }
       const user = discordClient.users.cache.get(userId)
       const audioStream = receiver.subscribe(userId, {
         end: {
@@ -383,7 +393,14 @@ function speak_impl(voice_Connection, mapKey) {
 function process_commands_query(txt, mapKey, user) {
     if (txt && txt.length) {
         let val = guildMap.get(mapKey);
-        val.text_Channel.send(user.username + ': ' + txt)
+        // val.text_Channel.send(user.username + ': ' + txt)
+        // メインプロセスにテキストを送信
+        process.send({ type: 'update-text', data: { sourceName: 'ksk_subtitles', newText: txt } });
+        // ipcMain.emit('update-text', { sourceName: 'ksk_subtitles', newText: txt }); // 'yourSourceName' を適切なソース名に置き換えてください
+        // ipcMain.send('update-text', { sourceName: 'ksk_subtitles', newText: txt }); // 'yourSourceName' を適切なソース名に置き換えてください
+        // mainWindow.webContents.send('update-text', { sourceName: 'ksk_subtitles', newText: txt }); // 'ksk_subtitles' を適切なソース名に置き換えてください
+        // ipcRenderer.send('update-text', { sourceName: 'ksk_subtitles', newText: txt });
+        // sendMessageToMainWindow('update-text', { sourceName: 'ksk_subtitles', newText: txt });
     }
 }
 
@@ -429,14 +446,21 @@ async function transcribe_witai(buffer) {
         const contenttype = "audio/raw;encoding=signed-integer;bits=16;rate=48k;endian=little"
         const output = await extractSpeechIntent(WITAI_TOK, stream, contenttype)
         witAI_lastcallTS = Math.floor(new Date());
-        console.log(output)
         stream.destroy()
-        if (output && '_text' in output && output._text.length)
-            return output._text
-        if (output && 'text' in output && output.text.length)
-            return output.text
+        if (output && typeof output === 'string') {
+          const jsonArrayString = `[${output.replace(/}\s*{/g, '},{')}]`;
+          // console.log(`DEAD BEEF jsonArrayString: ${jsonArrayString}`);
+          const dataArray = JSON.parse([jsonArrayString]);
+          // console.log(`DEAD BEEF dataArray: ${dataArray}`);
+          const filteredData = dataArray.filter(item => item.type === "FINAL_UNDERSTANDING");
+          const texts = filteredData.map(item => item.text);
+          console.log(`DEAD BEEF texts: ${texts}`);
+          return texts;
+        }
         return output;
-    } catch (e) { console.log('transcribe_witai 851:' + e); console.log(e) }
+    } catch (e) {
+      console.log('transcribe_witai 851:' + e); console.log(e)
+    }
 }
 
 // Google Speech API
@@ -476,3 +500,4 @@ async function transcribe_gspeech(buffer) {
 //////////////////////////////////////////
 //////////////////////////////////////////
 //////////////////////////////////////////
+

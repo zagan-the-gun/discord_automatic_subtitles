@@ -15,8 +15,8 @@ console.log('main.jsが読み込まれました'); // スクリプトが読み�
 
 function createWindow() {
     mainWindow = new BrowserWindow({
-        width: 800,
-        height: 600,
+        width: 400,
+        height: 800,
         webPreferences: {
             nodeIntegration: false, // nodeIntegrationは無効にする
             contextIsolation: true, // contextIsolationを有効にする
@@ -30,10 +30,30 @@ function createWindow() {
 
 app.whenReady().then(() => {
     createWindow();
-    // startBot();
+    startBot();
 });
 
+import { fork } from 'child_process';
+
+let botEvent;
+
+function startBot() {
+    const botPath = path.join(__dirname, 'bot.js'); // bot.jsのパスを指定
+    const botProcess = fork(botPath); // bot.jsを子プロセスとして起動
+
+    botProcess.on('message', (message) => {
+        console.log('メッセージを受信:', message);
+         // メッセージが 'update-text' の場合、メインプロセスに送信
+         if (message.type === 'update-text') {
+            // ipcMain.emit('update-text', message.data); // メインプロセスにメッセージを送信
+            ipcMain.emit('update-text', botEvent, { sourceName: message.data.sourceName, newText: message.data.newText[0]}); // メインプロセスにメッセージを送信
+        }
+   });
+}
+
+
 ipcMain.on('connect-to-obs', async (event, { ipAddress, port, password }) => {
+    console.log(`接続試行: ws://${ipAddress}:${port} パスワード: ${password}`);
     try {
         await obs.connect(`ws://${ipAddress}:${port}`, password);
         console.log('接続成功');
@@ -59,6 +79,8 @@ app.on('activate', () => {
 });
 
 ipcMain.on('update-text', async (event, { sourceName, newText }) => {
+    console.log('DEAD BEEF typeof sourceName',typeof sourceName);
+    console.log('DEAD BEEF typeof newText',typeof newText);
     try {
         await obs.call('SetInputSettings', {
             // source: sourceName,
@@ -69,9 +91,12 @@ ipcMain.on('update-text', async (event, { sourceName, newText }) => {
             },
         });
         console.log('テキストを更新しました:', newText);
-        event.reply('text-update-status', 'テキストを更新しました');
+        if (event) {
+            event.reply('text-update-status', 'テキストを更新しました');
+        }
     } catch (error) {
         console.error('テキストの更新に失敗しました:', error);
         event.reply('text-update-status', 'テキストの更新に失敗しました: ' + error.message);
     }
 });
+
