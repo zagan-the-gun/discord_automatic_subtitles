@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, Menu, dialog, ipcMain } from 'electron';
 import OBSWebSocket from 'obs-websocket-js'; // デフォルトエクスポートとしてインポート
 import path from 'path'; // pathモジュールをインポート
 import { fileURLToPath } from 'url'; // fileURLToPathをインポート
@@ -30,8 +30,46 @@ function createWindow() {
 
 app.whenReady().then(() => {
     createWindow();
+    createMenu(); // カスタムメニューを作成
     startBot();
 });
+
+// カスタムメニューの作成
+function createMenu() {
+    const menuTemplate = [
+        {
+            label: 'Help',
+            submenu: [
+                {
+                    label: 'About',
+                    click: () => {
+                        // Aboutダイアログを表示する処理をここに追加
+                        showAboutDialog();
+                    }
+                }
+            ]
+        }
+    ];
+
+    const menu = Menu.buildFromTemplate(menuTemplate);
+    Menu.setApplicationMenu(menu); // カスタムメニューを設定
+}
+
+// Aboutダイアログを表示する関数
+function showAboutDialog() {
+    const aboutWindow = new BrowserWindow({
+        width: 300,
+        height: 200,
+        webPreferences: {
+            nodeIntegration: true,
+            contextIsolation: false,
+        },
+        frame: false, // メニューバーやタイトルバーを非表示にする
+        resizable: false // ウィンドウのサイズ変更を無効にする
+    });
+
+    aboutWindow.loadFile('src/renderer/about.html'); // about.htmlを読み込む
+}
 
 import { fork } from 'child_process';
 
