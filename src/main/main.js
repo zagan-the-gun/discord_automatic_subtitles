@@ -48,6 +48,12 @@ function createMenu() {
                     click: () => {
                         showObsSettingsDialog(); // 設定ダイアログを表示する関数を呼び出す
                     }
+                },
+                {
+                    label: 'Discord Settings',
+                    click: () => {
+                        showDiscordSettingsDialog(); // 設定ダイアログを表示する関数を呼び出す
+                    }
                 }
             ]
         },
@@ -88,6 +94,23 @@ function showObsSettingsDialog() {
     settingsWindow.loadFile('src/renderer/obs_settings.html'); // settings.htmlを読み込む
 }
 
+// Discord設定ダイアログを表示する関数
+function showDiscordSettingsDialog() {
+    const settingsWindow = new BrowserWindow({
+        width: 400,
+        height: 300,
+        webPreferences: {
+            nodeIntegration: false,
+            contextIsolation: true,
+            preload: path.join(__dirname, 'preload.js')
+        },
+        autoHideMenuBar: true,
+        frame: true // フレームを有効にする
+    });
+
+    settingsWindow.loadFile('src/renderer/discord_settings.html'); // settings.htmlを読み込む
+}
+
 // Aboutダイアログを表示する関数
 function showAboutDialog() {
     const aboutWindow = new BrowserWindow({
@@ -124,8 +147,9 @@ function startBot() {
 
 // 設定を保存するためのIPCリスナー
 ipcMain.on('save-settings', async (event, settings) => {
-    console.log('OBS設定保存');
-    store.set('obsSettings', settings); // 設定を保存
+    console.log('設定保存');
+    // store.set('obsSettings', settings); // 設定を保存
+    store.set(settings); // 設定を保存
     console.log('設定が保存されました:', settings);
     event.reply('settings-saved', '設定が保存されました。'); // レンダラープロセスに通知
     mainWindow.webContents.send('settings-loaded', '設定が保存されました。');
@@ -133,8 +157,9 @@ ipcMain.on('save-settings', async (event, settings) => {
 
 // 設定を読み込むためのIPCリスナー
 ipcMain.on('load-settings', async (event) => {
-    console.log('OBS設定読込');
-    const settings = store.get('obsSettings'); // 保存された設定を取得
+    console.log('設定読込');
+    // const settings = store.get('obsSettings'); // 保存された設定を取得
+    const settings = store.get(); // 保存された設定を取得
     event.reply('settings-loaded', settings); // レンダラープロセスに送信
     mainWindow.webContents.send('settings-loaded', settings);
 });

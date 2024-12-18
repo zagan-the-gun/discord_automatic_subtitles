@@ -8,27 +8,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 設定が読み込まれたときの処理
     window.electron.receive('settings-loaded', (settings) => {
         if (settings) {
-            // document.getElementById('ipAddress').value = settings.ipAddress || '';
-            // document.getElementById('port').value = settings.port || '';
-            document.getElementById('password').value = settings.password || '';
             document.getElementById('ipAddress').innerText = settings.ipAddress || '';
             document.getElementById('port').innerText = settings.port || '';
-            // document.getElementById('password').innerText = settings.password || '';
-            // document.getElementById('password').innerText = '*'.repeat(settings.password.length);
+            document.getElementById('password').value = settings.password || '';
+            document.getElementById('voiceChannelId').innerText = settings.voiceChannelId || '';
+            document.getElementById('userId').innerText = settings.userId || '';
         }
     });
     
     connectButton.addEventListener('click', async function() {
         console.log('接続ボタンがクリックされました'); // デバッグ用ログ
-        // const ipAddress = document.getElementById('ipAddress').value;
-        // const port = document.getElementById('port').value;
-        const password = document.getElementById('password').value;
         const ipAddress = document.getElementById('ipAddress').innerText;
         const port = document.getElementById('port').innerText;
-        // const password = document.getElementById('password').innerText;
+        const password = document.getElementById('password').value;
+        const voiceChannelId = document.getElementById('voiceChannelId').innerText;
+        const userId = document.getElementById('userId').innerText;
 
         // メインプロセスに接続情報を送信
-        window.electron.send('connect-to-obs', { ipAddress, port, password });
+        window.electron.send('connect-to-obs', { ipAddress, port, password, voiceChannelId, userId});
     });
 
     // メインプロセスからの応答を受け取る
