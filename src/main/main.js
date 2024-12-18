@@ -3,11 +3,14 @@ import OBSWebSocket from 'obs-websocket-js'; // デフォルトエクスポー�
 import path from 'path'; // pathモジュールをインポート
 import { fileURLToPath } from 'url'; // fileURLToPathをインポート
 // import { startBot } from './bot.js';
+import Store from 'electron-store';
+
 
 // __dirnameを定義
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const store = new Store();
 let mainWindow;
 const obs = new OBSWebSocket(); // ここでインスタンスを作成
 
@@ -38,6 +41,17 @@ app.whenReady().then(() => {
 function createMenu() {
     const menuTemplate = [
         {
+            label: 'Settings', // Settingsメニューを追加
+            submenu: [
+                {
+                    label: 'OBS Settings',
+                    click: () => {
+                        showObsSettingsDialog(); // 設定ダイアログを表示する関数を呼び出す
+                    }
+                }
+            ]
+        },
+        {
             label: 'Help',
             submenu: [
                 {
@@ -53,6 +67,25 @@ function createMenu() {
 
     const menu = Menu.buildFromTemplate(menuTemplate);
     Menu.setApplicationMenu(menu); // カスタムメニューを設定
+}
+
+// OBS設定ダイアログを表示する関数
+function showObsSettingsDialog() {
+    const settingsWindow = new BrowserWindow({
+        width: 400,
+        height: 300,
+        webPreferences: {
+            // nodeIntegration: true, // nodeIntegrationは無効にする
+            // contextIsolation: false, // contextIsolationを有効にする
+            nodeIntegration: false,
+            contextIsolation: true,
+            preload: path.join(__dirname, 'preload.js')
+        },
+        autoHideMenuBar: true,
+        frame: true // フレームを有効にする
+    });
+
+    settingsWindow.loadFile('src/renderer/obs_settings.html'); // settings.htmlを読み込む
 }
 
 // Aboutダイアログを表示する関数
@@ -89,6 +122,22 @@ function startBot() {
    });
 }
 
+// 設定を保存するためのIPCリスナー
+ipcMain.on('save-settings', async (event, settings) => {
+    console.log('OBS設定保存');
+    store.set('obsSettings', settings); // 設定を保存
+    console.log('設定が保存されました:', settings);
+    event.reply('settings-saved', '設定が保存されました。'); // レンダラープロセスに通知
+    mainWindow.webContents.send('settings-loaded', '設定が保存されました。');
+});
+
+// 設定を読み込むためのIPCリスナー
+ipcMain.on('load-settings', async (event) => {
+    console.log('OBS設定読込');
+    const settings = store.get('obsSettings'); // 保存された設定を取得
+    event.reply('settings-loaded', settings); // レンダラープロセスに送信
+    mainWindow.webContents.send('settings-loaded', settings);
+});
 
 ipcMain.on('connect-to-obs', async (event, { ipAddress, port, password }) => {
     console.log(`接続試行: ws://${ipAddress}:${port} パスワード: ${password}`);
@@ -96,7 +145,7 @@ ipcMain.on('connect-to-obs', async (event, { ipAddress, port, password }) => {
         await obs.connect(`ws://${ipAddress}:${port}`, password);
         console.log('接続成功');
         event.reply('connection-status', '接続成功'); // これを使う
-        mainWindow.webContents.send('connection-status', '接続成功');
+        mainWindow.webContents.send('connection-status', '接続成功です');
     } catch (error) {
         console.error('接続エラー:', error);
         event.reply('connection-status', '接続失敗');

@@ -34,20 +34,43 @@
             margin-top: 20px;
             font-weight: bold;
         }
+        .right-align {
+            text-align: right; /* 右寄せ */
+        }
+        .none-border {
+            border: none;
+        }
     </style>
-    <script src="renderer.js" defer></script>
+    <!-- <script src="renderer.js" defer></script> -->
 </head>
 <body>
     <h1>無許可で自動字幕くん</h1>
     <h3>Discordで特定のユーザのボイチャに自動で字幕を付けて、OBSのテキストボックスにWebsocket経由で送信するアプリ</h3>
-    <label for="ipAddress">IPアドレス:</label>
+    <h2>OBS Settings</h2>
+    <table>
+        <tbody>
+            <tr>
+                <td class="right-align">IP Address:</td>
+                <td><div id="ipAddress"></div></td>
+            </tr>
+            <tr>
+                <td class="right-align">PORT:</td>
+                <td><div id="port"></div></td>
+            </tr>
+            <tr>
+                <td class="right-align">password:</td>
+                <td><input class="none-border" id="password" type="password" value="********" readonly /></td>
+            </tr>
+        </tbody>
+    </table>
+    <!-- <label for="ipAddress">IPアドレス:</label>
     <input type="text" id="ipAddress" value="192.168.1.12" /><br />
 
     <label for="port">ポート:</label>
     <input type="number" id="port" value="4455" /><br />
 
     <label for="password">パスワード:</label>
-    <input type="password" id="password" value="RbHO48AJVrnbmI5w" placeholder="パスワードを入力" /><br />
+    <input type="password" id="password" value="RbHO48AJVrnbmI5w" placeholder="パスワードを入力" /><br /> -->
 
     <button id="connectButton">接続</button>
     <div id="status"></div>
@@ -61,6 +84,6 @@
 
     <button id="start-bot-button">ボットを起動</button>
 
-    <!-- <script src="renderer.js" defer></script> -->
+    <script src="renderer.js" defer></script>
 </body>
 </html>
