@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OBS Settings</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            text-align: center;
+        }
+        h1 {
+            font-size: 24px;
+        }
+        .form-group {
+            display: flex; /* フレックスボックスを使用 */
+            justify-content: space-between; /* 左右にスペースを均等に配置 */
+            align-items: center; /* 垂直方向に中央揃え */
+            margin-bottom: 15px; /* 各グループの下部マージンを設定 */
+        }
+        label {
+            margin-right: 10px; /* ラベルと入力フィールドの間にマージンを設定 */
+            flex: 0 0 30%; /* ラベルの幅を30%に設定 */
+            text-align: right; /* ラベルを右寄せ */
+        }
+        input {
+            width: 70%; /* 入力フィールドの幅を70%に設定 */
+            padding: 8px;
+            border: 1px solid #ccc; /* ボーダーを設定 */
+            border-radius: 4px; /* 角を丸くする */
+        }
+        .button-group {
+            display: flex; /* フレックスボックスを使用 */
+            justify-content: flex-end; /* ボタンを右寄せ */
+            margin-top: 20px; /* 上部マージンを設定 */
+        }
+        button {
+            /* padding: 10px 20px;
+            font-size: 16px; */
+            cursor: pointer;
+            /* background-color: #0078D4;
+            color: white;
+            border: none;
+            border-radius: 5px; */
+            transition: background-color 0.3s;
+            margin-left: 10px; /* ボタン間のスペースを設定 */
+        }
+    </style>
+    <!-- <script src="./obs_settings.js" defer></script> -->
+    <!-- <script src="./obs_settings.js"></script> -->
+</head>
+<body>
+    <!-- <form id="settingsForm"> -->
+        <div class="form-group">
+            <label for="ipAddress">IPアドレス:</label>
+            <input type="text" id="ipAddress" placeholder="例: 192.168.1.1" required>
+        </div>
+        <div class="form-group">
+            <label for="port">ポート:</label>
+            <input type="number" id="port" placeholder="例: 4455" required>
+        </div>
+        <div class="form-group">
+            <label for="password">パスワード:</label>
+            <input type="password" id="password" placeholder="パスワードを入力" required>
+        </div>
+        <div class="button-group">
+            <!-- <button type="submit">設定を保存</button> -->
+            <button id="saveButton">設定を保存</button>
+            <button id="cancelButton">Calcel</button>
+        </div>
+    <!-- </form> -->
+    <script src="obs_settings.js" defer></script>
+    <!-- <script src="./obs_settings.js"></script> -->
+</body>
+</html>
