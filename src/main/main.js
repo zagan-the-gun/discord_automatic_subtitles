@@ -165,7 +165,7 @@ ipcMain.on('load-settings', async (event) => {
 });
 
 ipcMain.on('connect-to-obs', async (event, { ipAddress, port, password }) => {
-    console.log(`接続試行: ws://${ipAddress}:${port} パスワード: ${password}`);
+    console.log(`接続試行: ws://${ipAddress}:${port}, パスワード: ${password}`);
     try {
         await obs.connect(`ws://${ipAddress}:${port}`, password);
         console.log('接続成功');
