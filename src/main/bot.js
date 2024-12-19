@@ -1,3 +1,5 @@
+console.log('bot.jsが読み込まれました');
+
 export function startBot() {
     loadConfig(); // 設定を読み込む
 
@@ -395,7 +397,7 @@ function process_commands_query(txt, mapKey, user) {
         let val = guildMap.get(mapKey);
         // val.text_Channel.send(user.username + ': ' + txt)
         // メインプロセスにテキストを送信
-        process.send({ type: 'update-text', data: { sourceName: 'ksk_subtitles', newText: txt } });
+        process.send({ type: 'update-text', data: { inputName: 'ksk_subtitles', newText: txt } });
         // ipcMain.emit('update-text', { sourceName: 'ksk_subtitles', newText: txt }); // 'yourSourceName' を適切なソース名に置き換えてください
         // ipcMain.send('update-text', { sourceName: 'ksk_subtitles', newText: txt }); // 'yourSourceName' を適切なソース名に置き換えてください
         // mainWindow.webContents.send('update-text', { sourceName: 'ksk_subtitles', newText: txt }); // 'ksk_subtitles' を適切なソース名に置き換えてください

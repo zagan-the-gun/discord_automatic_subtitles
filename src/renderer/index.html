@@ -16,48 +16,81 @@
         }
         input {
             width: 100%;
-            padding: 8px;
+            /* padding: 8px;
             margin-top: 5px;
+            margin-right: 10px; */
         }
         button {
-            margin-top: 15px;
+            /* margin-top: 15px;
             padding: 10px 15px;
             background-color: #4CAF50;
             color: white;
-            border: none;
+            border: none; */
             cursor: pointer;
+            transition: background-color 0.3s;
+
         }
-        button:hover {
+        /* button:hover {
             background-color: #45a049;
-        }
-        #status {
-            margin-top: 20px;
-            font-weight: bold;
-        }
+        } */
         .right-align {
             text-align: right; /* 右寄せ */
         }
         .none-border {
             border: none;
         }
+        .form-group {
+            display: flex; /* フレックスボックスを使用 */
+            justify-content: space-between; /* 左右にスペースを均等に配置 */
+            align-items: center; /* 垂直方向に中央揃え */
+            margin-bottom: 15px; /* 各グループの下部マージンを設定 */
+        }
+        #status {
+            /* margin-top: 20px; */
+            /* font-weight: bold; */
+            margin-right: 10px; /* ボタンとの間にスペースを追加 */
+            /* margin-left: 5px; */
+            flex-grow: 1; /* ステータスの幅を可能な限り広げる */
+        }
+        /* .form-group div {
+            flex: 1;
+        } */
+        #connectButton {
+            flex-shrink: 0; /* ボタンの幅を固定 */
+        }
+        /* table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        th, td {
+            border: 1px solid #000;
+            padding: 5px;
+        } */
+
     </style>
     <!-- <script src="renderer.js" defer></script> -->
 </head>
 <body>
     <h1>無許可で自動字幕くん</h1>
     <h3>Discordで特定のユーザのボイチャに自動で字幕を付けて、OBSのテキストボックスにWebsocket経由で送信するアプリ</h3>
-    <h2>OBS Settings</h2>
-    <button id="connectButton">接続</button>
-    <div id="status"></div>
-
-    <label for="sourceName">テキストソース名:</label>
-    <input type="text" id="sourceName" value="ksk_subtitles" placeholder="テキストソース名を入力" /><br />
-
-    <label for="newText">OBS送信テキスト:</label>
-    <input type="text" id="newText" placeholder="新しいテキストを入力" /><br />
-    <button id="updateTextButton">テキストを更新</button>
-
-    <button id="start-bot-button">ボットを起動</button>
+    <h2>OBS</h2>
+    <table style="margin: auto; width: 100%;">
+        <tbody>
+            <tr>
+                <td>STATUS:</td>
+                <td style="width: 100%;"><div id="status">DISCONNECTED</div></td>
+                <td class="right-align"><button id="connectButton">Connect</button></td>
+            </tr>
+            <tr>
+                <td>Text source:</td>
+                <td colspan="2"><div id="inputName"></div></td>
+            </tr>
+            <tr>
+                <td colspan="2" class="right-align" style="padding-right: 15px;"><input type="text" id="newText" placeholder="New text" /></td>
+                <td class="right-align"><button id="updateTextButton">UpdateText</button></td>
+            </tr>
+        </tbody>
+    </table>
 
     <h2>Discord Settings</h2>
     <table>
@@ -72,6 +105,7 @@
             </tr>
         </tbody>
     </table>
+    <button id="start-bot-button">ボットを起動</button>
 
     <script src="renderer.js" defer></script>
 </body>

@@ -18,7 +18,7 @@ console.log('main.jsが読み込まれました'); // スクリプトが読み�
 
 function createWindow() {
     mainWindow = new BrowserWindow({
-        width: 400,
+        width: 450,
         height: 800,
         webPreferences: {
             nodeIntegration: false, // nodeIntegrationは無効にする
@@ -140,7 +140,7 @@ function startBot() {
          // メッセージが 'update-text' の場合、メインプロセスに送信
          if (message.type === 'update-text') {
             // ipcMain.emit('update-text', message.data); // メインプロセスにメッセージを送信
-            ipcMain.emit('update-text', botEvent, { sourceName: message.data.sourceName, newText: message.data.newText[0]}); // メインプロセスにメッセージを送信
+            ipcMain.emit('update-text', botEvent, { inputName: message.data.inputName, newText: message.data.newText[0]}); // メインプロセスにメッセージを送信
         }
    });
 }
@@ -170,7 +170,7 @@ ipcMain.on('connect-to-obs', async (event, { ipAddress, port, password }) => {
         await obs.connect(`ws://${ipAddress}:${port}`, password);
         console.log('接続成功');
         event.reply('connection-status', '接続成功'); // これを使う
-        mainWindow.webContents.send('connection-status', '接続成功です');
+        mainWindow.webContents.send('connection-status', 'CONNECTED!');
     } catch (error) {
         console.error('接続エラー:', error);
         event.reply('connection-status', '接続失敗');
@@ -190,21 +190,21 @@ app.on('activate', () => {
     }
 });
 
-ipcMain.on('update-text', async (event, { sourceName, newText }) => {
-    console.log('DEAD BEEF typeof sourceName',typeof sourceName);
+ipcMain.on('update-text', async (event, { inputName, newText }) => {
+    console.log('DEAD BEEF typeof inputName',typeof inputName);
     console.log('DEAD BEEF typeof newText',typeof newText);
     try {
         await obs.call('SetInputSettings', {
             // source: sourceName,
             // text: newText
-            inputName: sourceName,
+            inputName: inputName,
             inputSettings: {
               text: newText,
             },
         });
         console.log('テキストを更新しました:', newText);
         if (event) {
-            event.reply('text-update-status', 'テキストを更新しました');
+            event.reply('text-update-status', 'Update text');
         }
     } catch (error) {
         console.error('テキストの更新に失敗しました:', error);

@@ -11,9 +11,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.electron.receive('settings-loaded', (settings) => {
         if (settings) {
             currentSettings = settings;
+            document.getElementById('inputName').innerText = settings.inputName || '';
         }
     });
 
+    // OBS接続
     connectButton.addEventListener('click', async function() {
         window.electron.send('load-settings');
 
@@ -34,11 +36,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // テキスト更新ボタンのクリックイベント
     updateTextButton.addEventListener('click', async () => {
-        const newText = document.getElementById('newText').value;
-        const sourceName = document.getElementById('sourceName').value;
+        window.electron.send('load-settings');
 
         // メインプロセスにテキスト更新のリクエストを送信
-        window.electron.send('update-text', { sourceName, newText });
+        window.electron.send('update-text', { 
+            inputName: currentSettings.inputName || '',
+            newText: document.getElementById('newText').value
+        });
     });
 
     // ボット起動ボタンのクリックイベント
