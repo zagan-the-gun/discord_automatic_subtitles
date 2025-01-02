@@ -4,6 +4,8 @@ import path from 'path'; // pathモジュールをインポート
 import { fileURLToPath } from 'url'; // fileURLToPathをインポート
 // import { startBot } from './bot.js';
 import Store from 'electron-store';
+import { fork } from 'child_process';
+
 
 
 // __dirnameを定義
@@ -34,7 +36,7 @@ function createWindow() {
 app.whenReady().then(() => {
     createWindow();
     createMenu(); // カスタムメニューを作成
-    startBot();
+    // startBot();
 });
 
 // カスタムメニューの作成
@@ -79,7 +81,7 @@ function createMenu() {
 function showObsSettingsDialog() {
     const settingsWindow = new BrowserWindow({
         width: 400,
-        height: 300,
+        height: 320,
         webPreferences: {
             // nodeIntegration: true, // nodeIntegrationは無効にする
             // contextIsolation: false, // contextIsolationを有効にする
@@ -127,13 +129,12 @@ function showAboutDialog() {
     aboutWindow.loadFile('src/renderer/about.html'); // about.htmlを読み込む
 }
 
-import { fork } from 'child_process';
-
 let botEvent;
+let botProcess;
 
-function startBot() {
+function startBot(discordToken, serverChannelId, voiceChannelId, userId) {
     const botPath = path.join(__dirname, 'bot.js'); // bot.jsのパスを指定
-    const botProcess = fork(botPath); // bot.jsを子プロセスとして起動
+    botProcess = fork(botPath, [discordToken, serverChannelId, voiceChannelId, userId]); // bot.jsを子プロセスとして起動
 
     botProcess.on('message', (message) => {
         console.log('メッセージを受信:', message);
@@ -144,6 +145,22 @@ function startBot() {
         }
    });
 }
+
+ipcMain.on('start-bot', async (event, { discordToken, serverChannelId, voiceChannelId, userId }) => {
+    console.log('BOT起動: discordToken: ', discordToken);
+    startBot(discordToken, serverChannelId, voiceChannelId, userId); // BOTを起動する関数を呼び出す
+});
+
+ipcMain.on('stop-bot', async (event) => {
+    console.log('BOT停止');
+    if (botProcess) {
+        botProcess.kill(); // BOTを停止
+        console.log('BOTが停止しました');
+        botProcess = null;
+    } else {
+        console.log('BOTは起動していません');
+    }
+});
 
 // 設定を保存するためのIPCリスナー
 ipcMain.on('save-settings', async (event, settings) => {
@@ -211,4 +228,3 @@ ipcMain.on('update-text', async (event, { inputName, newText }) => {
         event.reply('text-update-status', 'テキストの更新に失敗しました: ' + error.message);
     }
 });
-

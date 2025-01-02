@@ -1,6 +1,8 @@
 document.addEventListener('DOMContentLoaded', async () => {
     const connectButton = document.getElementById('connectButton');
     const updateTextButton = document.getElementById('updateTextButton');
+    const botStartButton = document.getElementById('botStartButton');
+    const botStopButton = document.getElementById('botStopButton');
 
     let currentSettings = {}; // 設定を格納する変数
 
@@ -12,6 +14,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (settings) {
             currentSettings = settings;
             document.getElementById('inputName').innerText = settings.inputName || '';
+            document.getElementById('serverChannelId').innerText = settings.serverChannelId || '';
+            document.getElementById('voiceChannelId').innerText = settings.voiceChannelId || '';
+            document.getElementById('userId').innerText = settings.userId || '';
         }
     });
 
@@ -24,17 +29,18 @@ document.addEventListener('DOMContentLoaded', async () => {
             ipAddress: currentSettings.ipAddress || '',
             port: currentSettings.port || '',
             password: currentSettings.password || '',
+            serverChannelId: currentSettings.serverChannelId || '',
             voiceChannelId: currentSettings.voiceChannelId || '',
             userId: currentSettings.userId || ''
         });
     });
 
-    // メインプロセスからの応答を受け取る
+    // OBS接続状態の表示
     window.electron.receive('connection-status', (message) => {
         document.getElementById('status').innerText = message; // ステータスを表示
     });
 
-    // テキスト更新ボタンのクリックイベント
+    // OBSテキスト更新ボタンのクリックイベント
     updateTextButton.addEventListener('click', async () => {
         window.electron.send('load-settings');
 
@@ -45,12 +51,25 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     });
 
-    // ボット起動ボタンのクリックイベント
-    startBotButton.addEventListener('click', () => {
-        console.log('ボット起動ボタンがクリックされました'); // デバッグ用ログ
-        // メインプロセスにボット起動のリクエストを送信
-        window.electron.send('start-discord-bot', { message: 'ボットを起動します' });
-        document.getElementById('status').innerText = 'ボットを起動中...'; // ステータスを表示
+    // BOT起動/停止
+    botStartButton.addEventListener('click', async () => {
+        window.electron.send('load-settings');
+
+        // メインプロセスに接続情報を送信
+        window.electron.send('stop-bot');
+        window.electron.send('start-bot', {
+            discordToken: currentSettings.discordToken || '',
+            serverChannelId: currentSettings.serverChannelId || '',
+            voiceChannelId: currentSettings.voiceChannelId || '',
+            userId: currentSettings.userId || ''
+        });
+
+        // document.getElementById('botStatus').innerText = 'ボットを起動中...'; // ステータスを表示
+    });
+
+    botStopButton.addEventListener('click', async () => {
+        window.electron.send('stop-bot');
+        // document.getElementById('botStatus').innerText = 'ボットを起動中...'; // ステータスを表示
     });
 
 });

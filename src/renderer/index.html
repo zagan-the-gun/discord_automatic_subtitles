@@ -72,7 +72,7 @@
 </head>
 <body>
     <h1>無許可で自動字幕くん</h1>
-    <h3>Discordで特定のユーザのボイチャに自動で字幕を付けて、OBSのテキストボックスにWebsocket経由で送信するアプリ</h3>
+    <!-- <h3>Discordで特定のユーザのボイチャに自動で字幕を付けて、OBSのテキストボックスにWebsocket経由で送信するアプリ</h3> -->
     <h2>OBS</h2>
     <table style="margin: auto; width: 100%;">
         <tbody>
@@ -82,7 +82,7 @@
                 <td class="right-align"><button id="connectButton">Connect</button></td>
             </tr>
             <tr>
-                <td>Text source:</td>
+                <td style="width: 100%;">Text source:</td>
                 <td colspan="2"><div id="inputName"></div></td>
             </tr>
             <tr>
@@ -92,21 +92,37 @@
         </tbody>
     </table>
 
-    <h2>Discord Settings</h2>
-    <table>
+    <h2>Discord</h2>
+    <table style="margin: auto; width: 100%;">
         <tbody>
             <tr>
+                <td class="right-align">BOT:</td>
+                <td><button style="width: 100%;" id="botStartButton">START</button></td>
+                <td><button style="width: 100%;" id="botStopButton">STOP</button></td>
+            </tr>
+            <!-- <tr>
+                <td class="right-align">Voice channel:</td>
+                <td><button style="width: 100%;" id="joinButton">JOIN</button></td>
+                <td><button style="width: 100%;" id="leftButton">LEAVE</button></td>
+            </tr> -->
+            <tr>
+                <td class="right-align">Server Channel ID:</td>
+                <td colspan="2"><div id="serverChannelId"></div></td>
+            </tr>
+            <tr>
                 <td class="right-align">Voice Channel ID:</td>
-                <td><div id="voiceChannelId"></div></td>
+                <td colspan="2"><div id="voiceChannelId"></div></td>
             </tr>
             <tr>
                 <td class="right-align">User ID:</td>
-                <td><div id="userId"></div></td>
+                <td colspan="2"><div id="userId"></div></td>
             </tr>
         </tbody>
     </table>
-    <button id="start-bot-button">ボットを起動</button>
+
+    <h2>AI</h2>
 
     <script src="renderer.js" defer></script>
 </body>
 </html>
+

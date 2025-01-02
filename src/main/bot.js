@@ -1,20 +1,6 @@
 console.log('bot.jsが読み込まれました');
 
-export function startBot() {
-    loadConfig(); // 設定を読み込む
-
-    const client = new Client({ intents: [IntentsBitField.Flags.Guilds, IntentsBitField.Flags.GuildMessages, IntentsBitField.Flags.MessageContent] });
-
-    client.once('ready', () => {
-        console.log(`Logged in as ${client.user.tag}!`);
-    });
-
-    client.login(DISCORD_TOK); // 環境変数または設定ファイルからトークンを取得
-}
-
-//////////////////////////////////////////
-//////////////// LOGGING /////////////////
-//////////////////////////////////////////
+// discordClient.on('messageCreate', async (msg) => {
 function getCurrentDateString() {
     return (new Date()).toISOString() + ' ::';
 };
@@ -23,19 +9,7 @@ console.log = function () {
     var args = [].slice.call(arguments);
     __originalLog.apply(console.log, [getCurrentDateString()].concat(args));
 };
-//////////////////////////////////////////
-//////////////////////////////////////////
 
-// const fs = require('fs');
-// const util = require('util');
-// const { Readable } = require('stream');
-// const { OpusEncoder } = require('@discordjs/opus');
-// const https = require('https')
-// const { Client, IntentsBitField } = require('discord.js')
-// const { joinVoiceChannel, EndBehaviorType } = require('@discordjs/voice');
-// const vosk = require('vosk');
-// const witClient = require('node-witai-speech');
-// const gspeech = require('@google-cloud/speech');
 import fs from 'fs'; // requireをimportに変更
 import util from 'util'; // requireをimportに変更
 import { Readable } from 'stream'; // requireをimportに変更
@@ -51,10 +25,6 @@ import witClient from 'node-witai-speech'; // requireをimportに変更
 import gspeech from '@google-cloud/speech'; // requireをimportに変更
 // import { ipcMain } from 'electron';
 
-//////////////////////////////////////////
-///////////////// VARIA //////////////////
-//////////////////////////////////////////
-
 function necessary_dirs() {
     if (!fs.existsSync('./data/')){
         fs.mkdirSync('./data/');
@@ -68,6 +38,7 @@ function sleep(ms) {
   });
 }
 
+// 音声データをステレオからモノラルに変換しバッファを返す
 async function convert_audio(input) {
     try {
         // stereo to mono channel
@@ -80,14 +51,6 @@ async function convert_audio(input) {
         throw e;
     }
 }
-//////////////////////////////////////////
-//////////////////////////////////////////
-//////////////////////////////////////////
-
-
-//////////////////////////////////////////
-//////////////// CONFIG //////////////////
-//////////////////////////////////////////
 
 const SETTINGS_FILE = 'settings.json';
 
@@ -95,6 +58,7 @@ let DISCORD_TOK = null;
 let WITAI_TOK = null; 
 let SPEECH_METHOD = 'vosk'; // witai, google, vosk
 
+// 設定ファイルの読み込み（廃止予定）
 function loadConfig() {
     if (fs.existsSync(SETTINGS_FILE)) {
         const CFG_DATA = JSON.parse( fs.readFileSync(SETTINGS_FILE, 'utf8') );
@@ -116,7 +80,7 @@ function loadConfig() {
         throw 'missing gspeech_key.json'
     
 }
-loadConfig() //削除?
+loadConfig() //オリジナルはここで設定読み込んで待機状態になる
 
 function listWitAIApps(cb) {
     const options = {
@@ -199,7 +163,7 @@ if (process.env.DEBUG)
 discordClient.on('ready', () => {
     console.log(`Discord client on ${discordClient.user.tag}!`)
 })
-discordClient.login(DISCORD_TOK)
+// discordClient.login(DISCORD_TOK)
 
 const PREFIX = '*';
 const _CMD_HELP        = PREFIX + 'help';
@@ -211,7 +175,6 @@ const _CMD_LANG        = PREFIX + 'lang';
 
 const guildMap = new Map();
 
-
 discordClient.on('messageCreate', async (msg) => {
     try {
         if (!('guild' in msg) || !msg.guild) return; // prevent private messages to bot
@@ -220,12 +183,12 @@ discordClient.on('messageCreate', async (msg) => {
           console.log(`*joinが呼び出されました: ${!msg.member.voice.channel.id}`);
           if (!msg.member.voice.channel.id) {
                 msg.reply('Error: please join a voice channel first.')
-            } else {
+          } else {
                 if (!guildMap.has(mapKey))
                     await connect(msg, mapKey)
                 else
                     msg.reply('Already connected')
-            }
+          }
         } else if (msg.content.trim().toLowerCase() == _CMD_LEAVE) {
             if (guildMap.has(mapKey)) {
                 let val = guildMap.get(mapKey);
@@ -338,18 +301,22 @@ let recs = {}
 //   // dev reference: https://github.com/alphacep/vosk-api/blob/master/nodejs/index.js
 // }
 
+// 音声の切り出し
 function speak_impl(voice_Connection, mapKey) {
   console.log('speak_implが呼び出されました');
   const receiver = voice_Connection.receiver;
   receiver.speaking.on('start', async (userId) => {
+    console.log('userId: ', userId);
+    
     // zagan
     // if (userId !== '487629687078780959') {
     // ksk
-    if (userId !== '266090864550346752') {
-      console.log(`userId ${userId} 意外は処理対象外です。`)
-      return;
-    }
+    // if (userId !== '266090864550346752') {
+    //   console.log(`userId ${userId} 意外は処理対象外です。`)
+    //   return;
+    // }
       const user = discordClient.users.cache.get(userId)
+      console.log('userId: ', userId, ', user: ', user);
       const audioStream = receiver.subscribe(userId, {
         end: {
           behavior: EndBehaviorType.AfterSilence,
@@ -388,28 +355,21 @@ function speak_impl(voice_Connection, mapKey) {
       }); 
   }
 
-);
+  );
   console.log(`speak_impl準備完了`);
 }
 
+// 字幕の送信
 function process_commands_query(txt, mapKey, user) {
     if (txt && txt.length) {
         let val = guildMap.get(mapKey);
         // val.text_Channel.send(user.username + ': ' + txt)
         // メインプロセスにテキストを送信
         process.send({ type: 'update-text', data: { inputName: 'ksk_subtitles', newText: txt } });
-        // ipcMain.emit('update-text', { sourceName: 'ksk_subtitles', newText: txt }); // 'yourSourceName' を適切なソース名に置き換えてください
-        // ipcMain.send('update-text', { sourceName: 'ksk_subtitles', newText: txt }); // 'yourSourceName' を適切なソース名に置き換えてください
-        // mainWindow.webContents.send('update-text', { sourceName: 'ksk_subtitles', newText: txt }); // 'ksk_subtitles' を適切なソース名に置き換えてください
-        // ipcRenderer.send('update-text', { sourceName: 'ksk_subtitles', newText: txt });
-        // sendMessageToMainWindow('update-text', { sourceName: 'ksk_subtitles', newText: txt });
     }
 }
 
-
-//////////////////////////////////////////
-//////////////// SPEECH //////////////////
-//////////////////////////////////////////
+// 各字幕AIに音声バッファを振り分け
 async function transcribe(buffer, mapKey) {
   if (SPEECH_METHOD === 'witai') {
       return transcribe_witai(buffer)
@@ -472,6 +432,7 @@ const gspeechclient = new gspeech.SpeechClient({
   keyFilename: 'gspeech_key.json'
 });
 
+// 音声バッファを Google Cloud Speech-to-Text API で字幕に変換
 async function transcribe_gspeech(buffer) {
   try {
       console.log('transcribe_gspeech')
@@ -499,7 +460,65 @@ async function transcribe_gspeech(buffer) {
   } catch (e) { console.log('transcribe_gspeech 368:' + e) }
 }
 
-//////////////////////////////////////////
-//////////////////////////////////////////
-//////////////////////////////////////////
+let targetUserId = null;
+let users = [
+]
+let botSettings = {
+  discordToken: null,
+  serverChannelId: null,
+  voiceChannelId: null
+}
+export function startBot(discordToken = null, serverChannelId = null, voiceChannelId = null, userId = null) {
+  // loadConfig(); // 設定を読み込む
+  console.log('startBot 実行 discordToken:', discordToken, ', serverChannelId: ', serverChannelId, ', voiceChannelId: ', voiceChannelId, ', userId: ', userId);
 
+  botSettings.discordToken = discordToken;
+  botSettings.serverChannelId = serverChannelId;
+  botSettings.voiceChannelId = voiceChannelId;
+  const client = new Client({ intents: [IntentsBitField.Flags.Guilds, IntentsBitField.Flags.GuildMessages, IntentsBitField.Flags.MessageContent] });
+
+  client.once('ready', () => {
+    console.log(`Logged in as ${client.user.tag}!`);
+  });
+
+  if (discordToken && serverChannelId && voiceChannelId && userId) {
+    targetUserId = userId;
+    connectToVoiceChannel(discordToken, serverChannelId, voiceChannelId, userId);
+  }
+  // client.login(DISCORD_TOK); // 環境変数または設定ファイルからトークンを取得
+}
+
+// ボイスチャンネルに接続する関数
+async function connectToVoiceChannel() {
+  console.log('manual connect');
+  const msg = {
+    guild: { id: serverChannelId },
+    member: {
+        voice: {
+            channel: { id: voiceChannelId }
+        }
+    },
+    channel: { id: '1307282412048351293' }, //本当は字幕やログを出力するテキストチャンネルのIDを指定
+    reply: (content) => {
+        console.log(`Reply: ${content}`); // 返信をコンソールに出力
+    },
+    content: '', // 必要に応じてメッセージ内容を設定
+  };
+
+  // ここでボイスチャンネルへの接続処理を実装
+  console.log(`Connecting to voiceChannelId: ${voiceChannelId} in server: ${serverChannelId} for user: ${userId}`);
+  // client.login(discordToken);
+  await discordClient.login(botSettings.discordToken)
+
+  const mapKey = msg.guild.id;
+  if (!guildMap.has(mapKey))
+    await connect(msg, mapKey)
+  else
+    msg.reply('Already connected')
+
+}
+
+const args = process.argv.slice(2);
+const [discordToken, serverChannelId, voiceChannelId, userId] = args;
+startBot(discordToken, serverChannelId, voiceChannelId, userId);
+// loadConfig()
