@@ -137,7 +137,7 @@ function showAiSettingsDialog() {
 function showAboutDialog() {
     const aboutWindow = new BrowserWindow({
         width: 300,
-        height: 200,
+        height: 350,
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false,

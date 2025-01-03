@@ -11,13 +11,6 @@
             margin: 5px;
             text-align: center;
         }
-        h1 {
-            font-size: 24px;
-            padding-top: 5px;
-            padding-bottom: 5px;
-            margin-top: 5px;
-            margin-bottom: 5px;
-        }
         p {
             font-size: 14px;
             padding-top: 5px;
@@ -25,13 +18,108 @@
             margin-top: 5px;
             margin-bottom: 5px;
         }
+
+        table {
+            margin: 0; /* テーブルのマージンを0に設定 */
+            padding: 0; /* テーブルのパディングを0に設定 */
+            border-collapse: collapse;
+        }
+
+        td, th {
+            margin: 0; /* セルのマージンを0に設定 */
+            padding: 0; /* セルのパディングを0に設定 */
+        }
+
+img {border: none !important;}
+
+li {list-style-type: none;border: none !important;}
+
+/* 目・口以外のベース画像を表示 */
+ul {
+  position: relative;top: 5px;left: 0;right: 0;
+  width: 80px;height: 80px !important;
+  background: url(../assets/base.png) no-repeat 0 0 / contain;
+  animation: floating-now 4000ms ease-in-out forwards infinite;
+  margin: 0px;
+  padding: 0px;
+}
+
+/* 目パチパーツをulの疑似要素に表示 */
+ul::before {
+  content: '';
+  display: inline-block;
+  position: absolute;top: 0;right: 0;bottom: 0;left: 0;
+  /* 目初期状態 eye_3.png */
+  background-image: url(../assets/eye_3.png);
+  background-repeat: no-repeat;
+  background-size: contain;
+  animation: mepachi 2400ms ease-in-out forwards infinite;
+  margin: 0px;
+  padding: 0px;
+}
+li {
+  position: absolute;top: 0;left: 0;width: 80px;height: 80px !important;
+  animation: kuchipaku 800ms ease-in-out forwards infinite;
+  margin: 0px;
+  padding: 0px;
+}
+
+/* 会話状態 */
+img[class*="Voice_avatarSpeaking"]{
+  animation: kuchipaku 800ms ease-in-out forwards infinite;
+}
+
+/* 待機状態アニメーション（ふんわり） */
+@keyframes floating-now {
+  0% {top: 0;}
+  50% {top: -5px;}
+  100% {top: 0;}
+}
+
+/* 待機状態アニメーション（まばたき） */
+@keyframes mepachi {
+  0% {background-image: url(../assets/eye_3.png);}
+  91% {background-image: url(../assets/eye_3.png);}
+  92% {background-image: url(../assets/eye_2.png);}
+  94% {background-image: url(../assets/eye_2.png);}
+  95% {background-image: url(../assets/eye_1.png);}
+  100% {background-image: url(../assets/eye_1.png);}
+}
+
+/* 会話状態アニメーション（口パク） */
+@keyframes kuchipaku {
+  0% {content: url(../assets/mth_3.png);}
+  19% {content: url(../assets/mth_3.png);}
+  20% {content: url(../assets/mth_2.png);}
+  39% {content: url(../assets/mth_2.png);}
+  40% {content: url(../assets/mth_3.png);}
+  59% {content: url(../assets/mth_3.png);}
+  60% {content: url(../assets/mth_1.png);}
+  79% {content: url(../assets/mth_1.png);}
+  80% {content: url(../assets/mth_2.png);}
+  99% {content: url(../assets/mth_2.png);}
+  100% {content: url(../assets/mth_1.png);}
+}
+
     </style>
 </head>
 <body>
-    <h1>About</h1>
-    <h3>Discordで特定のユーザのボイチャに自動で字幕を付けて、OBSのテキストボックスにWebsocket経由で送信するアプリ</h3>
-    <p>このアプリケーションはZAGANにより作成されました。</p>
-    <p>バージョン: 0.0.1</p>
+    <center>
+        <table>
+            <tbody>
+                <tr>
+                    <td><ul><li></li></ul></td>
+                    <td><ul><li></li></ul></td>
+                    <td><ul><li></li></ul></td>
+                </tr>
+            </tbody>
+        </table>
+    </center>
+
+    <p>Discordで特定ユーザのボイチャに自動で字幕を付けて、OBSのテキストボックスにWebsocket経由で送信するアプリ</h3>
+    <p>このアプリケーションはZAGANによって作成されました。</p>
+    <p>Ver: 0.9.1</p>
+    <p><a href="https://github.com/zagan-the-gun/discord_automatic_subtitles" target="_blank">GitHub repositories Here</a></p>
     <button id="closeButton">Thanks ZAGAN !</button>
 
     <script>
