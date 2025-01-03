@@ -2,7 +2,6 @@ import { app, BrowserWindow, Menu, dialog, ipcMain } from 'electron';
 import OBSWebSocket from 'obs-websocket-js'; // デフォルトエクスポートとしてインポート
 import path from 'path'; // pathモジュールをインポート
 import { fileURLToPath } from 'url'; // fileURLToPathをインポート
-// import { startBot } from './bot.js';
 import Store from 'electron-store';
 import { fork } from 'child_process';
 
@@ -56,6 +55,12 @@ function createMenu() {
                     click: () => {
                         showDiscordSettingsDialog(); // 設定ダイアログを表示する関数を呼び出す
                     }
+                },
+                {
+                    label: 'AI Settings',
+                    click: () => {
+                        showAiSettingsDialog(); // 設定ダイアログを表示する関数を呼び出す
+                    }
                 }
             ]
         },
@@ -83,8 +88,6 @@ function showObsSettingsDialog() {
         width: 400,
         height: 320,
         webPreferences: {
-            // nodeIntegration: true, // nodeIntegrationは無効にする
-            // contextIsolation: false, // contextIsolationを有効にする
             nodeIntegration: false,
             contextIsolation: true,
             preload: path.join(__dirname, 'preload.js')
@@ -113,6 +116,23 @@ function showDiscordSettingsDialog() {
     settingsWindow.loadFile('src/renderer/discord_settings.html'); // settings.htmlを読み込む
 }
 
+// AI設定ダイアログを表示する関数
+function showAiSettingsDialog() {
+    const settingsWindow = new BrowserWindow({
+        width: 400,
+        height: 300,
+        webPreferences: {
+            nodeIntegration: false,
+            contextIsolation: true,
+            preload: path.join(__dirname, 'preload.js')
+        },
+        autoHideMenuBar: true,
+        frame: true // フレームを有効にする
+    });
+
+    settingsWindow.loadFile('src/renderer/ai_settings.html'); // settings.htmlを読み込む
+}
+
 // Aboutダイアログを表示する関数
 function showAboutDialog() {
     const aboutWindow = new BrowserWindow({
@@ -132,23 +152,23 @@ function showAboutDialog() {
 let botEvent;
 let botProcess;
 
-function startBot(discordToken, serverChannelId, voiceChannelId, userId) {
+function startBot(discordToken, serverChannelId, voiceChannelId, userId, inputName, subtitleMethod, witaiToken) {
     const botPath = path.join(__dirname, 'bot.js'); // bot.jsのパスを指定
-    botProcess = fork(botPath, [discordToken, serverChannelId, voiceChannelId, userId]); // bot.jsを子プロセスとして起動
+    botProcess = fork(botPath, [discordToken, serverChannelId, voiceChannelId, userId, inputName, subtitleMethod, witaiToken]); // bot.jsを子プロセスとして起動
 
     botProcess.on('message', (message) => {
         console.log('メッセージを受信:', message);
-         // メッセージが 'update-text' の場合、メインプロセスに送信
-         if (message.type === 'update-text') {
+            // メッセージが 'update-text' の場合、メインプロセスに送信
+            if (message.type === 'update-text') {
             // ipcMain.emit('update-text', message.data); // メインプロセスにメッセージを送信
             ipcMain.emit('update-text', botEvent, { inputName: message.data.inputName, newText: message.data.newText[0]}); // メインプロセスにメッセージを送信
         }
-   });
+    });
 }
 
-ipcMain.on('start-bot', async (event, { discordToken, serverChannelId, voiceChannelId, userId }) => {
+ipcMain.on('start-bot', async (event, { discordToken, serverChannelId, voiceChannelId, userId, inputName, subtitleMethod, witaiToken}) => {
     console.log('BOT起動: discordToken: ', discordToken);
-    startBot(discordToken, serverChannelId, voiceChannelId, userId); // BOTを起動する関数を呼び出す
+    startBot(discordToken, serverChannelId, voiceChannelId, userId, inputName, subtitleMethod, witaiToken); // BOTを起動する関数を呼び出す
 });
 
 ipcMain.on('stop-bot', async (event) => {

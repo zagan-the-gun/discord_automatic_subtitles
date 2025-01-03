@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('serverChannelId').innerText = settings.serverChannelId || '';
             document.getElementById('voiceChannelId').innerText = settings.voiceChannelId || '';
             document.getElementById('userId').innerText = settings.userId || '';
+            document.getElementById('subtitleMethod').innerText = settings.subtitleMethod || '';
         }
     });
 
@@ -31,7 +32,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             password: currentSettings.password || '',
             serverChannelId: currentSettings.serverChannelId || '',
             voiceChannelId: currentSettings.voiceChannelId || '',
-            userId: currentSettings.userId || ''
+            userId: currentSettings.userId || '',
+            subtitleMethod: currentSettings.subtitleMethod || '',
+            witaiToken: currentSettings.witaiToken || ''
         });
     });
 
@@ -61,7 +64,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             discordToken: currentSettings.discordToken || '',
             serverChannelId: currentSettings.serverChannelId || '',
             voiceChannelId: currentSettings.voiceChannelId || '',
-            userId: currentSettings.userId || ''
+            userId: currentSettings.userId || '',
+            inputName: currentSettings.inputName || '',
+            subtitleMethod: currentSettings.subtitleMethod || '',
+            witaiToken: currentSettings.witaiToken || ''
         });
 
         // document.getElementById('botStatus').innerText = 'ボットを起動中...'; // ステータスを表示

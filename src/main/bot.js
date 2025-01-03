@@ -13,17 +13,13 @@ console.log = function () {
 import fs from 'fs'; // requireをimportに変更
 import util from 'util'; // requireをimportに変更
 import { Readable } from 'stream'; // requireをimportに変更
-// import { OpusEncoder } from '@discordjs/opus'; // requireをimportに変更
 import opus from '@discordjs/opus'; // デフォルトエクスポートをインポート
 const { OpusEncoder } = opus; // 必要なエクスポートを取得
 import https from 'https'; // requireをimportに変更
 import { Client, IntentsBitField } from 'discord.js'; // requireをimportに変更
 import { joinVoiceChannel, EndBehaviorType } from '@discordjs/voice'; // requireをimportに変更
-// import vosk from 'vosk'; // requireをimportに変更
 import witClient from 'node-witai-speech'; // requireをimportに変更
-// const witClientInstance = new witClient.Wit({ accessToken: WITAI_TOK });
 import gspeech from '@google-cloud/speech'; // requireをimportに変更
-// import { ipcMain } from 'electron';
 
 function necessary_dirs() {
     if (!fs.existsSync('./data/')){
@@ -54,34 +50,6 @@ async function convert_audio(input) {
 
 const SETTINGS_FILE = 'settings.json';
 
-let DISCORD_TOK = null;
-let WITAI_TOK = null; 
-let SPEECH_METHOD = 'vosk'; // witai, google, vosk
-
-// 設定ファイルの読み込み（廃止予定）
-function loadConfig() {
-    if (fs.existsSync(SETTINGS_FILE)) {
-        const CFG_DATA = JSON.parse( fs.readFileSync(SETTINGS_FILE, 'utf8') );
-        DISCORD_TOK = CFG_DATA.DISCORD_TOK;
-        WITAI_TOK = CFG_DATA.WITAI_TOK;
-        SPEECH_METHOD = CFG_DATA.SPEECH_METHOD;
-    }
-    DISCORD_TOK = process.env.DISCORD_TOK || DISCORD_TOK;
-    WITAI_TOK = process.env.WITAI_TOK || WITAI_TOK;
-    SPEECH_METHOD = process.env.SPEECH_METHOD || SPEECH_METHOD;
-
-    if (!['witai', 'google', 'vosk'].includes(SPEECH_METHOD))
-        throw 'invalid or missing SPEECH_METHOD'
-    if (!DISCORD_TOK)
-        throw 'invalid or missing DISCORD_TOK'
-    if (SPEECH_METHOD === 'witai' && !WITAI_TOK)
-        throw 'invalid or missing WITAI_TOK'
-    if (SPEECH_METHOD === 'google' && !fs.existsSync('./gspeech_key.json'))
-        throw 'missing gspeech_key.json'
-    
-}
-loadConfig() //オリジナルはここで設定読み込んで待機状態になる
-
 function listWitAIApps(cb) {
     const options = {
       hostname: 'api.wit.ai',
@@ -90,7 +58,7 @@ function listWitAIApps(cb) {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer '+WITAI_TOK,
+        'Authorization': 'Bearer '+botSettings.witaiToken,
       },
     }
 
@@ -120,7 +88,7 @@ function updateWitAIAppLang(appID, lang, cb) {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer '+WITAI_TOK,
+        'Authorization': 'Bearer '+botSettings.witaiToken,
       },
     }
     const data = JSON.stringify({
@@ -145,10 +113,6 @@ function updateWitAIAppLang(appID, lang, cb) {
     req.end()
 }
 
-//////////////////////////////////////////
-//////////////////////////////////////////
-//////////////////////////////////////////
-
 const myIntents = new IntentsBitField();
 myIntents.add(
   IntentsBitField.Flags.GuildPresences,
@@ -163,7 +127,6 @@ if (process.env.DEBUG)
 discordClient.on('ready', () => {
     console.log(`Discord client on ${discordClient.user.tag}!`)
 })
-// discordClient.login(DISCORD_TOK)
 
 const PREFIX = '*';
 const _CMD_HELP        = PREFIX + 'help';
@@ -214,7 +177,7 @@ discordClient.on('messageCreate', async (msg) => {
             msg.reply('hello back =)')
         }
         else if (msg.content.split('\n')[0].split(' ')[0].trim().toLowerCase() == _CMD_LANG) {
-            if (SPEECH_METHOD === 'witai') {
+            if (botSettings.subtitleMethod === 'witai') {
               const lang = msg.content.replace(_CMD_LANG, '').trim().toLowerCase()
               listWitAIApps(data => {
                 if (!data.length)
@@ -228,7 +191,7 @@ discordClient.on('messageCreate', async (msg) => {
                   })
                 }
               })
-            } else if (SPEECH_METHOD === 'vosk') {
+            } else if (botSettings.subtitleMethod === 'vosk') {
               let val = guildMap.get(mapKey);
               const lang = msg.content.replace(_CMD_LANG, '').trim().toLowerCase()
               val.selected_lang = lang;
@@ -312,9 +275,12 @@ function speak_impl(voice_Connection, mapKey) {
     // if (userId !== '487629687078780959') {
     // ksk
     // if (userId !== '266090864550346752') {
-    //   console.log(`userId ${userId} 意外は処理対象外です。`)
-    //   return;
-    // }
+    // userId
+    if (userId !== users[0].userId) {
+      // console.log(`userId ${userId} 意外は処理対象外です。`)
+      return;
+    }
+
       const user = discordClient.users.cache.get(userId)
       console.log('userId: ', userId, ', user: ', user);
       const audioStream = receiver.subscribe(userId, {
@@ -337,7 +303,7 @@ function speak_impl(voice_Connection, mapKey) {
         const duration = buffer.length / 48000 / 4;
         console.log("duration: " + duration)
         
-        if (SPEECH_METHOD === 'witai' || SPEECH_METHOD === 'google') {
+        if (botSettings.subtitleMethod === 'witai' || botSettings.subtitleMethod === 'google') {
           if (duration < 1.0 || duration > 19) { // 20 seconds max dur
               console.log("TOO SHORT / TOO LONG; SKPPING")
               return;
@@ -365,17 +331,17 @@ function process_commands_query(txt, mapKey, user) {
         let val = guildMap.get(mapKey);
         // val.text_Channel.send(user.username + ': ' + txt)
         // メインプロセスにテキストを送信
-        process.send({ type: 'update-text', data: { inputName: 'ksk_subtitles', newText: txt } });
+        process.send({ type: 'update-text', data: { inputName: users[0].inputName, newText: txt } });
     }
 }
 
 // 各字幕AIに音声バッファを振り分け
 async function transcribe(buffer, mapKey) {
-  if (SPEECH_METHOD === 'witai') {
+  if (botSettings.subtitleMethod === 'witai') {
       return transcribe_witai(buffer)
-  } else if (SPEECH_METHOD === 'google') {
+  } else if (botSettings.subtitleMethod === 'google') {
       return transcribe_gspeech(buffer)
-  } else if (SPEECH_METHOD === 'vosk') {
+  } else if (botSettings.subtitleMethod === 'vosk') {
       let val = guildMap.get(mapKey);
       recs[val.selected_lang].acceptWaveform(buffer);
       let ret = recs[val.selected_lang].result().text;
@@ -406,14 +372,12 @@ async function transcribe_witai(buffer) {
         const extractSpeechIntent = util.promisify(witClient.extractSpeechIntent);
         var stream = Readable.from(buffer);
         const contenttype = "audio/raw;encoding=signed-integer;bits=16;rate=48k;endian=little"
-        const output = await extractSpeechIntent(WITAI_TOK, stream, contenttype)
+        const output = await extractSpeechIntent(botSettings.witaiToken, stream, contenttype)
         witAI_lastcallTS = Math.floor(new Date());
         stream.destroy()
         if (output && typeof output === 'string') {
           const jsonArrayString = `[${output.replace(/}\s*{/g, '},{')}]`;
-          // console.log(`DEAD BEEF jsonArrayString: ${jsonArrayString}`);
           const dataArray = JSON.parse([jsonArrayString]);
-          // console.log(`DEAD BEEF dataArray: ${dataArray}`);
           const filteredData = dataArray.filter(item => item.type === "FINAL_UNDERSTANDING");
           const texts = filteredData.map(item => item.text);
           console.log(`DEAD BEEF texts: ${texts}`);
@@ -461,20 +425,31 @@ async function transcribe_gspeech(buffer) {
 }
 
 let targetUserId = null;
+
 let users = [
+  {userId: null, inputName: null}
 ]
+
 let botSettings = {
   discordToken: null,
   serverChannelId: null,
-  voiceChannelId: null
+  voiceChannelId: null,
+  subtitleMethod: null,
+  witaiToken: null
 }
-export function startBot(discordToken = null, serverChannelId = null, voiceChannelId = null, userId = null) {
-  // loadConfig(); // 設定を読み込む
+
+export function startBot(discordToken = null, serverChannelId = null, voiceChannelId = null, userId = null, inputName = null, subtitleMethod = null, witaiToken = null) {
   console.log('startBot 実行 discordToken:', discordToken, ', serverChannelId: ', serverChannelId, ', voiceChannelId: ', voiceChannelId, ', userId: ', userId);
 
   botSettings.discordToken = discordToken;
   botSettings.serverChannelId = serverChannelId;
   botSettings.voiceChannelId = voiceChannelId;
+  botSettings.inputName = inputName;
+  botSettings.subtitleMethod = subtitleMethod;
+  botSettings.witaiToken = witaiToken;
+  users[0].userId = userId;
+  users[0].inputName = inputName;
+
   const client = new Client({ intents: [IntentsBitField.Flags.Guilds, IntentsBitField.Flags.GuildMessages, IntentsBitField.Flags.MessageContent] });
 
   client.once('ready', () => {
@@ -483,19 +458,18 @@ export function startBot(discordToken = null, serverChannelId = null, voiceChann
 
   if (discordToken && serverChannelId && voiceChannelId && userId) {
     targetUserId = userId;
-    connectToVoiceChannel(discordToken, serverChannelId, voiceChannelId, userId);
+    connectToVoiceChannel();
   }
-  // client.login(DISCORD_TOK); // 環境変数または設定ファイルからトークンを取得
 }
 
 // ボイスチャンネルに接続する関数
 async function connectToVoiceChannel() {
   console.log('manual connect');
   const msg = {
-    guild: { id: serverChannelId },
+    guild: { id: botSettings.serverChannelId },
     member: {
         voice: {
-            channel: { id: voiceChannelId }
+            channel: { id: botSettings.voiceChannelId }
         }
     },
     channel: { id: '1307282412048351293' }, //本当は字幕やログを出力するテキストチャンネルのIDを指定
@@ -507,7 +481,6 @@ async function connectToVoiceChannel() {
 
   // ここでボイスチャンネルへの接続処理を実装
   console.log(`Connecting to voiceChannelId: ${voiceChannelId} in server: ${serverChannelId} for user: ${userId}`);
-  // client.login(discordToken);
   await discordClient.login(botSettings.discordToken)
 
   const mapKey = msg.guild.id;
@@ -519,6 +492,43 @@ async function connectToVoiceChannel() {
 }
 
 const args = process.argv.slice(2);
-const [discordToken, serverChannelId, voiceChannelId, userId] = args;
-startBot(discordToken, serverChannelId, voiceChannelId, userId);
-// loadConfig()
+const [discordToken, serverChannelId, voiceChannelId, userId, inputName, subtitleMethod, witaiToken] = args;
+startBot(discordToken, serverChannelId, voiceChannelId, userId, inputName, subtitleMethod, witaiToken);
+
+process.on('message', (msg) => {
+  if (msg === 'shutdown') {
+      shutdown(); // 特定の関数を実行
+  }
+});
+
+function shutdown() {
+  console.log('プロセスが終了します。クリーンアップ処理を実行中...');
+
+
+  const msg = {
+    guild: { id: botSettings.serverChannelId },
+    member: {
+        voice: {
+            channel: { id: botSettings.voiceChannelId }
+        }
+    },
+    channel: { id: '1307282412048351293' }, //本当は字幕やログを出力するテキストチャンネルのIDを指定
+    reply: (content) => {
+        console.log(`Reply: ${content}`); // 返信をコンソールに出力
+    },
+    content: '', // 必要に応じてメッセージ内容を設定
+  };
+  const mapKey = msg.guild.id;
+
+  // クリーンアップ処理をここに追加
+  if (guildMap.has(mapKey)) {
+    let val = guildMap.get(mapKey);
+    if (val.voice_Channel) val.voice_Channel.leave()
+    if (val.voice_Connection) val.voice_Connection.disconnect()
+    guildMap.delete(mapKey)
+    msg.reply("Disconnected.")
+    } else {
+      msg.reply("Cannot leave because not connected.")
+    }
+  process.exit(0); // プロセスを終了
+}
