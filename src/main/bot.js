@@ -1,4 +1,5 @@
 console.log('bot.jsが読み込まれました');
+process.send({ type: 'log-message', data: 'bot.jsが読み込まれました' });
 
 // discordClient.on('messageCreate', async (msg) => {
 function getCurrentDateString() {
@@ -42,8 +43,8 @@ async function convert_audio(input) {
         const ndata = data.filter((el, idx) => idx % 2);
         return Buffer.from(ndata);
     } catch (e) {
-        console.log(e)
         console.log('convert_audio: ' + e)
+        process.send({ type: 'log-message', data: 'convert_audio: ' + e });
         throw e;
     }
 }
@@ -126,6 +127,7 @@ if (process.env.DEBUG)
     discordClient.on('debug', console.debug);
 discordClient.on('ready', () => {
     console.log(`Discord client on ${discordClient.user.tag}!`)
+    process.send({ type: 'log-message', data: `Discord client on ${discordClient.user.tag}!` });
 })
 
 const PREFIX = '*';
@@ -144,6 +146,7 @@ discordClient.on('messageCreate', async (msg) => {
         const mapKey = msg.guild.id;
         if (msg.content.trim().toLowerCase() === _CMD_JOIN) {
           console.log(`*joinが呼び出されました: ${!msg.member.voice.channel.id}`);
+          process.send({ type: 'log-message', data: `*joinが呼び出されました: ${!msg.member.voice.channel.id}` });
           if (!msg.member.voice.channel.id) {
                 msg.reply('Error: please join a voice channel first.')
           } else {
@@ -201,6 +204,7 @@ discordClient.on('messageCreate', async (msg) => {
         }
     } catch (e) {
         console.log('discordClient message: ' + e)
+        process.send({ type: 'log-message', data: `discordClient message: ${e}` });
         msg.reply('Error#180: Something went wrong, try again or contact the developers if this keeps happening.');
     }
 })
@@ -216,6 +220,7 @@ function getHelpString() {
 }
 
 async function connect(msg, mapKey) {
+  process.send({ type: 'log-message', data: `connect msg: ${msg}, mapKey: ${mapKey}` });
   try {
       let voice_Channel = await discordClient.channels.fetch(msg.member.voice.channel.id);
       if (!voice_Channel) return msg.reply("Error: The voice channel does not exist!");
@@ -236,9 +241,7 @@ async function connect(msg, mapKey) {
           'selected_lang': 'en',
           'debug': false,
       });
-      console.log(`speak_implの実行`);
       speak_impl(voice_Connection, mapKey)
-      console.log(`speak_implの実行完了`);
       voice_Connection.on('disconnect', async(e) => {
           if (e) console.log(e);
           guildMap.delete(mapKey);
@@ -246,6 +249,7 @@ async function connect(msg, mapKey) {
       msg.reply('connected!')
   } catch (e) {
       console.log('connect: ' + e)
+      process.send({ type: 'log-message', data: `connect: ${e}` });
       msg.reply('Error: unable to join your voice channel.');
       throw e;
   }

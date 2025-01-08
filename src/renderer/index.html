@@ -66,11 +66,23 @@
             border: 1px solid #000;
             padding: 5px;
         } */
+        #logContent {
+            white-space: pre-wrap; /* 折り返しを有効にする */
+            word-wrap: break-word; /* 単語の途中で折り返す */
+            border: 1px solid #ccc; /* 境界線を追加 */
+            padding: 10px; /* 内側の余白を追加 */
+            height: 200px; /* 高さを指定 */
+            overflow-y: auto; /* 縦方向のスクロールを有効にする */
+        }
 
+        #windowSize {
+            font-size: 8px; /* ウィンドウサイズ表示用のフォントサイズを小さく設定 */
+        }
     </style>
     <!-- <script src="renderer.js" defer></script> -->
 </head>
 <body>
+    <div class="right-align" id="windowSize">0 x 0</div>
     <h1>無許可で自動字幕くん</h1>
     <!-- <h3>Discordで特定のユーザのボイチャに自動で字幕を付けて、OBSのテキストボックスにWebsocket経由で送信するアプリ</h3> -->
     <h2>OBS</h2>
@@ -129,6 +141,8 @@
             </tr>
         </tbody>
     </table>
+    <h2>LOG</h2>
+    <pre id="logContent"></pre>
 
     <script src="renderer.js" defer></script>
 </body>

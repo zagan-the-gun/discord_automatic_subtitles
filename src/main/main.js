@@ -19,8 +19,8 @@ console.log('main.jsが読み込まれました'); // スクリプトが読み�
 
 function createWindow() {
     mainWindow = new BrowserWindow({
-        width: 450,
-        height: 800,
+        width: 400,
+        height: 870,
         webPreferences: {
             nodeIntegration: false, // nodeIntegrationは無効にする
             contextIsolation: true, // contextIsolationを有効にする
@@ -36,6 +36,7 @@ app.whenReady().then(() => {
     createWindow();
     createMenu(); // カスタムメニューを作成
     // startBot();
+    mainWindow.webContents.send('log-message', 'main.jsが読み込まれました'); // ログメッセージを送信
 });
 
 // カスタムメニューの作成
@@ -160,34 +161,42 @@ function startBot(discordToken, serverChannelId, voiceChannelId, userId, inputNa
         console.log('メッセージを受信:', message);
             // メッセージが 'update-text' の場合、メインプロセスに送信
             if (message.type === 'update-text') {
-            // ipcMain.emit('update-text', message.data); // メインプロセスにメッセージを送信
-            ipcMain.emit('update-text', botEvent, { inputName: message.data.inputName, newText: message.data.newText[0]}); // メインプロセスにメッセージを送信
-        }
+                // ipcMain.emit('update-text', message.data);
+                ipcMain.emit('update-text', botEvent, { inputName: message.data.inputName, newText: message.data.newText[0]});
+            } else if (message.type === 'log-message') {
+                mainWindow.webContents.send('log-message', message.data);
+            }
     });
 }
 
 ipcMain.on('start-bot', async (event, { discordToken, serverChannelId, voiceChannelId, userId, inputName, subtitleMethod, witaiToken}) => {
     console.log('BOT起動: discordToken: ', discordToken);
+    mainWindow.webContents.send('log-message', 'BOT起動: discordToken: ' + discordToken);
     startBot(discordToken, serverChannelId, voiceChannelId, userId, inputName, subtitleMethod, witaiToken); // BOTを起動する関数を呼び出す
 });
 
 ipcMain.on('stop-bot', async (event) => {
     console.log('BOT停止');
+    mainWindow.webContents.send('log-message', 'BOT停止');
     if (botProcess) {
         botProcess.kill(); // BOTを停止
         console.log('BOTが停止しました');
+        mainWindow.webContents.send('log-message', 'BOTが停止しました');
         botProcess = null;
     } else {
         console.log('BOTは起動していません');
+        mainWindow.webContents.send('log-message', 'BOTは起動していません');
     }
 });
 
 // 設定を保存するためのIPCリスナー
 ipcMain.on('save-settings', async (event, settings) => {
     console.log('設定保存');
+    mainWindow.webContents.send('log-message', '設定保存');
     // store.set('obsSettings', settings); // 設定を保存
     store.set(settings); // 設定を保存
     console.log('設定が保存されました:', settings);
+    mainWindow.webContents.send('log-message', '設定が保存されました:' + JSON.stringify(settings, null, 2));
     event.reply('settings-saved', '設定が保存されました。'); // レンダラープロセスに通知
     mainWindow.webContents.send('settings-loaded', '設定が保存されました。');
 });
@@ -195,6 +204,7 @@ ipcMain.on('save-settings', async (event, settings) => {
 // 設定を読み込むためのIPCリスナー
 ipcMain.on('load-settings', async (event) => {
     console.log('設定読込');
+    mainWindow.webContents.send('log-message', '設定読込');
     // const settings = store.get('obsSettings'); // 保存された設定を取得
     const settings = store.get(); // 保存された設定を取得
     event.reply('settings-loaded', settings); // レンダラープロセスに送信
@@ -203,13 +213,16 @@ ipcMain.on('load-settings', async (event) => {
 
 ipcMain.on('connect-to-obs', async (event, { ipAddress, port, password }) => {
     console.log(`接続試行: ws://${ipAddress}:${port}, パスワード: ${password}`);
+    mainWindow.webContents.send('log-message', `接続試行: ws://${ipAddress}:${port}, パスワード: ${password}`);
     try {
         await obs.connect(`ws://${ipAddress}:${port}`, password);
         console.log('接続成功');
+        mainWindow.webContents.send('log-message', '接続成功');
         event.reply('connection-status', '接続成功'); // これを使う
         mainWindow.webContents.send('connection-status', 'CONNECTED!');
     } catch (error) {
         console.error('接続エラー:', error);
+        mainWindow.webContents.send('log-message', `接続エラー: ${error}`);
         event.reply('connection-status', '接続失敗');
         mainWindow.webContents.send('connection-status', '接続エラー: ' + error.message);
     }
@@ -228,8 +241,6 @@ app.on('activate', () => {
 });
 
 ipcMain.on('update-text', async (event, { inputName, newText }) => {
-    console.log('DEAD BEEF typeof inputName',typeof inputName);
-    console.log('DEAD BEEF typeof newText',typeof newText);
     try {
         await obs.call('SetInputSettings', {
             // source: sourceName,
@@ -240,11 +251,13 @@ ipcMain.on('update-text', async (event, { inputName, newText }) => {
             },
         });
         console.log('テキストを更新しました:', newText);
+        mainWindow.webContents.send('log-message', `テキストを更新しました: ${newText}`);
         if (event) {
             event.reply('text-update-status', 'Update text');
         }
     } catch (error) {
         console.error('テキストの更新に失敗しました:', error);
+        mainWindow.webContents.send('log-message', `テキストの更新に失敗しました: ${error}`);
         event.reply('text-update-status', 'テキストの更新に失敗しました: ' + error.message);
     }
 });

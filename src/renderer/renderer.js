@@ -78,11 +78,30 @@ document.addEventListener('DOMContentLoaded', async () => {
         // document.getElementById('botStatus').innerText = 'ボットを起動中...'; // ステータスを表示
     });
 
+    // ログメッセージを受信
+    window.electron.receive('log-message', (message) => {
+        const logContent = document.getElementById('logContent');
+        logContent.innerText += message + '\n'; // メッセージを追加
+        logContent.scrollTop = logContent.scrollHeight; // スクロールを最新のメッセージに合わせる    
+        // appendLog(message); // ログに追加
+    });
+
+    // ウィンドウサイズを表示
+    function updateWindowSize() {
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        document.getElementById('windowSize').innerText = `${width} x ${height}`;
+    }
+
+    // 初期表示
+    updateWindowSize();
+
+    // ウィンドウサイズが変更されたときに更新
+    window.addEventListener('resize', updateWindowSize);
 });
 
 // テキスト更新の応答を受け取る
 window.electron.receive('text-update-status', (message) => {
-    console.log('テキスト更新の応答を受け取りました'); // デバッグ用ログ
     document.getElementById('status').innerText = message; // ステータスを表示
 });
 
