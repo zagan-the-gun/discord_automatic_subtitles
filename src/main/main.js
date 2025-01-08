@@ -158,7 +158,6 @@ function startBot(discordToken, serverChannelId, voiceChannelId, userId, inputNa
     botProcess = fork(botPath, [discordToken, serverChannelId, voiceChannelId, userId, inputName, subtitleMethod, witaiToken]); // bot.jsを子プロセスとして起動
 
     botProcess.on('message', (message) => {
-        console.log('メッセージを受信:', message);
             // メッセージが 'update-text' の場合、メインプロセスに送信
             if (message.type === 'update-text') {
                 // ipcMain.emit('update-text', message.data);
@@ -250,8 +249,8 @@ ipcMain.on('update-text', async (event, { inputName, newText }) => {
               text: newText,
             },
         });
-        console.log('テキストを更新しました:', newText);
-        mainWindow.webContents.send('log-message', `テキストを更新しました: ${newText}`);
+        console.log('updated text:', newText);
+        mainWindow.webContents.send('log-message', `updated text: ${newText}`);
         if (event) {
             event.reply('text-update-status', 'Update text');
         }

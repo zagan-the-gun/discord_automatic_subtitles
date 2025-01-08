@@ -220,7 +220,7 @@ function getHelpString() {
 }
 
 async function connect(msg, mapKey) {
-  process.send({ type: 'log-message', data: `connect msg: ${msg}, mapKey: ${mapKey}` });
+  process.send({ type: 'log-message', data: `connect msg: ${JSON.stringify(msg, null, 2)}, mapKey: ${mapKey}` });
   try {
       let voice_Channel = await discordClient.channels.fetch(msg.member.voice.channel.id);
       if (!voice_Channel) return msg.reply("Error: The voice channel does not exist!");
@@ -246,7 +246,8 @@ async function connect(msg, mapKey) {
           if (e) console.log(e);
           guildMap.delete(mapKey);
       })
-      msg.reply('connected!')
+      msg.reply('voice channel connected!!')
+      process.send({ type: 'log-message', data: `voice channel connected!` });
   } catch (e) {
       console.log('connect: ' + e)
       process.send({ type: 'log-message', data: `connect: ${e}` });
@@ -270,11 +271,8 @@ let recs = {}
 
 // 音声の切り出し
 function speak_impl(voice_Connection, mapKey) {
-  console.log('speak_implが呼び出されました');
   const receiver = voice_Connection.receiver;
-  receiver.speaking.on('start', async (userId) => {
-    console.log('userId: ', userId);
-    
+  receiver.speaking.on('start', async (userId) => {    
     // zagan
     // if (userId !== '487629687078780959') {
     // ksk
@@ -287,6 +285,7 @@ function speak_impl(voice_Connection, mapKey) {
 
       const user = discordClient.users.cache.get(userId)
       console.log('userId: ', userId, ', user: ', user);
+      process.send({ type: 'log-message', data: `userId: ${userId}, user: ${JSON.stringify(user, null, 2)}` });
       const audioStream = receiver.subscribe(userId, {
         end: {
           behavior: EndBehaviorType.AfterSilence,
@@ -295,21 +294,19 @@ function speak_impl(voice_Connection, mapKey) {
       });
 
       const encoder = new OpusEncoder(48000, 2);
-      console.log(`エンコード`);
       let buffer  = []; 
-      console.log(`バッファ準備`);
       audioStream.on("data", chunk => { buffer.push( encoder.decode( chunk ) ) }); 
-      console.log(`オーディオストリームON`);
       audioStream.once("end", async () => { 
-        console.log('音声ストリームが終了しました');
         
         buffer = Buffer.concat(buffer)
         const duration = buffer.length / 48000 / 4;
         console.log("duration: " + duration)
+        process.send({ type: 'log-message', data: `duration: ${duration}` });
         
         if (botSettings.subtitleMethod === 'witai' || botSettings.subtitleMethod === 'google') {
           if (duration < 1.0 || duration > 19) { // 20 seconds max dur
               console.log("TOO SHORT / TOO LONG; SKPPING")
+              process.send({ type: 'log-message', data: `TOO SHORT / TOO LONG; SKPPING` });
               return;
           }
         }
@@ -326,7 +323,6 @@ function speak_impl(voice_Connection, mapKey) {
   }
 
   );
-  console.log(`speak_impl準備完了`);
 }
 
 // 字幕の送信
@@ -369,10 +365,12 @@ async function transcribe_witai(buffer) {
         }
     } catch (e) {
         console.log('transcribe_witai 837:' + e)
+        process.send({ type: 'log-message', data: `transcribe_witai 837: ${e}` });
     }
 
     try {
         console.log('transcribe_witai')
+        process.send({ type: 'log-message', data: `transcribe_witai` });
         const extractSpeechIntent = util.promisify(witClient.extractSpeechIntent);
         var stream = Readable.from(buffer);
         const contenttype = "audio/raw;encoding=signed-integer;bits=16;rate=48k;endian=little"
@@ -384,12 +382,12 @@ async function transcribe_witai(buffer) {
           const dataArray = JSON.parse([jsonArrayString]);
           const filteredData = dataArray.filter(item => item.type === "FINAL_UNDERSTANDING");
           const texts = filteredData.map(item => item.text);
-          console.log(`DEAD BEEF texts: ${texts}`);
           return texts;
         }
         return output;
     } catch (e) {
       console.log('transcribe_witai 851:' + e); console.log(e)
+      process.send({ type: 'log-message', data: `transcribe_witai 851: ${e}` });
     }
 }
 
@@ -443,7 +441,8 @@ let botSettings = {
 }
 
 export function startBot(discordToken = null, serverChannelId = null, voiceChannelId = null, userId = null, inputName = null, subtitleMethod = null, witaiToken = null) {
-  console.log('startBot 実行 discordToken:', discordToken, ', serverChannelId: ', serverChannelId, ', voiceChannelId: ', voiceChannelId, ', userId: ', userId);
+  console.log('startBot running discordToken:', discordToken, ', serverChannelId: ', serverChannelId, ', voiceChannelId: ', voiceChannelId, ', userId: ', userId);
+  process.send({ type: 'log-message', data: `startBot running discordToken: ${discordToken}, serverChannelId: ${serverChannelId}, voiceChannelId: ${voiceChannelId}, userId: ${userId}` });
 
   botSettings.discordToken = discordToken;
   botSettings.serverChannelId = serverChannelId;
@@ -468,7 +467,6 @@ export function startBot(discordToken = null, serverChannelId = null, voiceChann
 
 // ボイスチャンネルに接続する関数
 async function connectToVoiceChannel() {
-  console.log('manual connect');
   const msg = {
     guild: { id: botSettings.serverChannelId },
     member: {
@@ -485,14 +483,15 @@ async function connectToVoiceChannel() {
 
   // ここでボイスチャンネルへの接続処理を実装
   console.log(`Connecting to voiceChannelId: ${voiceChannelId} in server: ${serverChannelId} for user: ${userId}`);
+  process.send({ type: 'log-message', data: `Connecting to voiceChannelId: ${voiceChannelId} in server: ${serverChannelId} for user: ${userId}` });
   await discordClient.login(botSettings.discordToken)
 
   const mapKey = msg.guild.id;
   if (!guildMap.has(mapKey))
     await connect(msg, mapKey)
   else
+    process.send({ type: 'log-message', data: `Already connected` });
     msg.reply('Already connected')
-
 }
 
 const args = process.argv.slice(2);
@@ -506,8 +505,8 @@ process.on('message', (msg) => {
 });
 
 function shutdown() {
-  console.log('プロセスが終了します。クリーンアップ処理を実行中...');
-
+  process.send({ type: 'log-message', data: `The BOT process will terminate. Cleanup process in progress...` });
+  console.log('The BOT process will terminate. Cleanup process in progress...');
 
   const msg = {
     guild: { id: botSettings.serverChannelId },
@@ -531,8 +530,10 @@ function shutdown() {
     if (val.voice_Connection) val.voice_Connection.disconnect()
     guildMap.delete(mapKey)
     msg.reply("Disconnected.")
+    process.send({ type: 'log-message', data: `Disconnected.` });
     } else {
       msg.reply("Cannot leave because not connected.")
+      process.send({ type: 'log-message', data: `Cannot leave because not connected.` });
     }
   process.exit(0); // プロセスを終了
 }
