@@ -7,6 +7,17 @@
     "start": "electron .",
     "build": "electron-packager . discord_automatic_subtitles --platform=win32 --arch=x64 --out=dist/ --overwrite"
   },
+  "build": {
+    "appId": "com.yourapp.id",
+    "win": {
+      "target": "nsis"
+    },
+    "files": [
+      "dist/**/*",
+      "node_modules/**/*",
+      "src/**/*"
+    ]
+  },
   "author": "",
   "license": "ISC",
   "description": "",
@@ -24,7 +35,6 @@
   },
   "devDependencies": {
     "@electron/packager": "^18.3.6",
-    "electron": "^33.2.1"
+    "electron": "^33.3.1"
   }
 }
-
