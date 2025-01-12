@@ -27,4 +27,4 @@ $ npx electron ./
 $ chcp 65001
 
 # ビルド方法
-$ electron-packager ./ slideshow --platform=win32 --arch=x64 --electron-version=5.0.7 --overwrite
+$ npm run build
