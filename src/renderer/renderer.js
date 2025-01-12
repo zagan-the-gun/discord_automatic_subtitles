@@ -80,10 +80,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // ログメッセージを受信
     window.electron.receive('log-message', (message) => {
-        const logContent = document.getElementById('logContent');
-        logContent.innerText += message + '\n'; // メッセージを追加
-        logContent.scrollTop = logContent.scrollHeight; // スクロールを最新のメッセージに合わせる    
-        // appendLog(message); // ログに追加
+        appendLog(message); // ログに追加
     });
 
     // ウィンドウサイズを表示
@@ -105,3 +102,8 @@ window.electron.receive('text-update-status', (message) => {
     document.getElementById('status').innerText = message; // ステータスを表示
 });
 
+async function appendLog(message) {
+    const logContent = document.getElementById('logContent');
+    logContent.innerText += message + '\n'; // メッセージを追加
+    logContent.scrollTop = logContent.scrollHeight; // スクロールを最新のメッセージに合わせる
+}
