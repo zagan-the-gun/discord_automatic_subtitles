@@ -158,13 +158,13 @@ function startBot(discordToken, serverChannelId, voiceChannelId, userId, inputNa
     botProcess = fork(botPath, [discordToken, serverChannelId, voiceChannelId, userId, inputName, subtitleMethod, witaiToken]); // bot.jsを子プロセスとして起動
 
     botProcess.on('message', (message) => {
-            // メッセージが 'update-text' の場合、メインプロセスに送信
-            if (message.type === 'update-text') {
-                // ipcMain.emit('update-text', message.data);
-                ipcMain.emit('update-text', botEvent, { inputName: message.data.inputName, newText: message.data.newText[0]});
-            } else if (message.type === 'log-message') {
-                mainWindow.webContents.send('log-message', message.data);
-            }
+        // メッセージが 'update-text' の場合、メインプロセスに送信
+        if (message.type === 'update-text') {
+            // ipcMain.emit('update-text', message.data);
+            ipcMain.emit('update-text', botEvent, { inputName: message.data.inputName, newText: message.data.newText});
+        } else if (message.type === 'log-message') {
+            mainWindow.webContents.send('log-message', message.data);
+        }
     });
 }
 
@@ -249,8 +249,8 @@ ipcMain.on('update-text', async (event, { inputName, newText }) => {
               text: newText,
             },
         });
-        console.log('updated text:', newText);
-        mainWindow.webContents.send('log-message', `updated text: ${newText}`);
+        console.log(`updated text: "${newText}"`);
+        mainWindow.webContents.send('log-message', `updated text: "${newText}"`);
         if (event) {
             event.reply('text-update-status', 'Update text');
         }

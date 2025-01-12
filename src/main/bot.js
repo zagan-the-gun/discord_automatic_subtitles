@@ -284,8 +284,8 @@ function speak_impl(voice_Connection, mapKey) {
     }
 
       const user = discordClient.users.cache.get(userId)
-      console.log('userId: ', userId, ', user: ', user);
-      process.send({ type: 'log-message', data: `userId: ${userId}, user: ${JSON.stringify(user, null, 2)}` });
+      // console.log('userId: ', userId, ', user: ', user);
+      // process.send({ type: 'log-message', data: `userId: ${userId}, user: ${JSON.stringify(user, null, 2)}` });
       const audioStream = receiver.subscribe(userId, {
         end: {
           behavior: EndBehaviorType.AfterSilence,
@@ -297,17 +297,18 @@ function speak_impl(voice_Connection, mapKey) {
       let buffer  = []; 
       audioStream.on("data", chunk => { buffer.push( encoder.decode( chunk ) ) }); 
       audioStream.once("end", async () => { 
-        
+
         buffer = Buffer.concat(buffer)
         const duration = buffer.length / 48000 / 4;
-        console.log("duration: " + duration)
-        process.send({ type: 'log-message', data: `duration: ${duration}` });
-        
+
         if (botSettings.subtitleMethod === 'witai' || botSettings.subtitleMethod === 'google') {
-          if (duration < 1.0 || duration > 19) { // 20 seconds max dur
-              console.log("TOO SHORT / TOO LONG; SKPPING")
-              process.send({ type: 'log-message', data: `TOO SHORT / TOO LONG; SKPPING` });
-              return;
+          if (duration < 0.5 || duration > 29) { // 30 seconds max dur
+            console.log(`duration: ${duration}, TOO SHORT / TOO LONG; SKPPING`)
+            process.send({ type: 'log-message', data: `duration: ${duration}, TOO SHORT / TOO LONG; SKPPING` });
+            return;
+          } else {
+            console.log("duration: " + duration)
+            process.send({ type: 'log-message', data: `duration: ${duration}`});
           }
         }
 
@@ -315,10 +316,10 @@ function speak_impl(voice_Connection, mapKey) {
           let new_buffer = await convert_audio(buffer)
           let out = await transcribe(new_buffer, mapKey);
           if (out != null)
-              process_commands_query(out, mapKey, user);
-        } catch (e) {
+            process_commands_query(out, mapKey, user);
+          } catch (e) {
             console.log('tmpraw rename: ' + e)
-        }
+          }
       }); 
   }
 
@@ -369,8 +370,8 @@ async function transcribe_witai(buffer) {
     }
 
     try {
-        console.log('transcribe_witai')
-        process.send({ type: 'log-message', data: `transcribe_witai` });
+        // console.log('transcribe_witai')
+        // process.send({ type: 'log-message', data: `transcribe_witai` });
         const extractSpeechIntent = util.promisify(witClient.extractSpeechIntent);
         var stream = Readable.from(buffer);
         const contenttype = "audio/raw;encoding=signed-integer;bits=16;rate=48k;endian=little"
@@ -382,7 +383,7 @@ async function transcribe_witai(buffer) {
           const dataArray = JSON.parse([jsonArrayString]);
           const filteredData = dataArray.filter(item => item.type === "FINAL_UNDERSTANDING");
           const texts = filteredData.map(item => item.text);
-          return texts;
+          return texts[0];
         }
         return output;
     } catch (e) {
